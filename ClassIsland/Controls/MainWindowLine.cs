@@ -381,7 +381,7 @@ public class MainWindowLine : ContentControl, INotificationConsumer
     }
     private static void PlayFadeInAnimation(Control control)
     {
-        if (IThemeService.AnimationLevel < 2)
+        if (AnimationAssist.AnimationLevel < 2)
         {
             return;
         }
@@ -477,18 +477,9 @@ public class MainWindowLine : ContentControl, INotificationConsumer
 
     private void UpdateStyles()
     {
-        if (Settings == null || !IsLoaded) 
+        if (Settings == null || !IsLoaded)
             return;
         MainWindowCustomizableNodeHelper.ApplyStyles(this, Settings);
-
-        if (Settings.IslandSeparationMode != 0)
-        {
-            SetValue(MainWindowStylesAssist.IsIslandSeperatedProperty, Settings.IslandSeparationMode == 2);
-        }
-        else
-        {
-            ClearValue(MainWindowStylesAssist.IsIslandSeperatedProperty);
-        }
     }
 
     private void SettingsOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -633,7 +624,30 @@ public class MainWindowLine : ContentControl, INotificationConsumer
         var cr = cx + cw;
         var cb = cy + ch;
 
-        return (cx <= ptr.X && cy <= ptr.Y && ptr.X <= cr && ptr.Y <= cb);
+        var isIn = cx <= ptr.X && cy <= ptr.Y && ptr.X <= cr && ptr.Y <= cb;
+        // 课间内容轮换时，覆盖层盖住了整块主界面，此时按窗口范围判定，
+        // 避免鼠标落在覆盖层内容（超出单行高度的部分）上时主界面不虚化。
+        if (!isIn && _mainWindow?.IsBreakRotationOverlayVisible == true)
+        {
+            isIn = IsPointerInMainWindow(ptr, dpiX, dpiY);
+        }
+        return isIn;
+    }
+
+    private bool IsPointerInMainWindow(Point ptr, double dpiX, double dpiY)
+    {
+        try
+        {
+            var origin = _mainWindow!.PointToScreen(new Point(0, 0));
+            var w = _mainWindow.Bounds.Width * dpiX;
+            var h = _mainWindow.Bounds.Height * dpiY;
+            return ptr.X >= origin.X && ptr.Y >= origin.Y && ptr.X <= origin.X + w && ptr.Y <= origin.Y + h;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogDebug(ex, "无法获取主界面窗口范围");
+            return false;
+        }
     }
 
     public void ReceiveNotifications(IReadOnlyList<NotificationPlayingTicket> notificationRequests)

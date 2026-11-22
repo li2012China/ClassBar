@@ -41,8 +41,6 @@ public class SettingsService(ILogger<SettingsService> Logger, IManagementService
 
     public bool WillMigrateProfileTrustedState { get; set; } = false;
 
-    public bool WillMigrateInitTutorial { get; set; } = false;
-
     private async Task LoadManagementSettingsAsync()
     {
         if (!ManagementService.Manifest.DefaultSettingsSource.IsNewerAndNotNull(ManagementService.Versions
@@ -83,8 +81,29 @@ public class SettingsService(ILogger<SettingsService> Logger, IManagementService
                 Settings.PropertyChanged += (sender, args) => SettingsChanged(args.PropertyName!);
             }
 
+            // 主界面固定为铺满、无圆角、不透明，忽略旧配置中的外观值。
+            Settings.Opacity = 1.0;
+            Settings.RadiusX = 0.0;
+            Settings.RadiusY = 0.0;
+            Settings.HideOnClass = true;
+
+            // 学期开始时间：旧配置（标记 0）只重算一次，按当前系统时间取 3 月 1 日或 9 月 1 日；
+            // 之后（标记 1）完全尊重用户在设置页的选择，不再覆盖。
+            if (Settings.SemesterStartTimeDefaultVersion < 1)
+            {
+                Settings.SingleWeekStartTime = Settings.GetDefaultSemesterStartTime();
+                Settings.SemesterStartTimeDefaultVersion = 1;
+            }
+
+            // 窗口停靠位置只支持正上（1）和正下（4），旧配置的其它位置就近迁移。
+            Settings.WindowDockingLocation = Settings.WindowDockingLocation switch
+            {
+                0 or 1 or 2 => 1,
+                _ => 4
+            };
+
             // 当还没有初始化应用且启用集控时，从集控拉取设置。
-            if (ManagementService.IsManagementEnabled && !Settings.IsWelcomeWindowShowed)
+            if (ManagementService.IsManagementEnabled)
             {
                 await LoadManagementSettingsAsync();
             }
@@ -139,22 +158,6 @@ public class SettingsService(ILogger<SettingsService> Logger, IManagementService
             return;
         }
         
-        if (Settings.LastAppVersion < Version.Parse("2.0.0.2") 
-            || (Settings.LastAppVersion >= Version.Parse("2.0.1.0") && Settings.LastAppVersion < Version.Parse("2.0.1.2")) )
-        {
-            if (PlatformServices.DesktopService.IsUrlSchemeRegistered)
-            {
-                PlatformServices.DesktopService.IsUrlSchemeRegistered = true;
-            }
-            Logger.LogInformation("成功迁移了 2.0.0.2 以前的设置。");
-        }
-        
-        if (Settings.LastAppVersion < Version.Parse("2.0.3.0") )
-        {
-            WillMigrateInitTutorial = true;
-            Logger.LogInformation("成功迁移了 2.0.3.0 以前的设置。");
-        }
-
         if (Settings.LastAppVersion < Version.Parse("2.0.3.3"))
         {
             if (PlatformServices.DesktopService.IsAutoStartEnabled)

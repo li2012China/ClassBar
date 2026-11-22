@@ -25,7 +25,7 @@ public partial class AdvancedSettingsViewModel(SettingsService settingsService) 
     {
         get => bool.TryParse(GlobalStorageService.GetValue("UseNativeTitlebar"), out var v)
             ? v
-            : IThemeService.UseNativeTitlebar;
+            : AnimationAssist.UseNativeTitlebar;
         set
         {
             GlobalStorageService.SetValue("UseNativeTitlebar", value.ToString());

@@ -153,7 +153,7 @@ public class VerticalDrawer : ContentControl
 
     public VerticalDrawer()
     {
-        if (IThemeService.AnimationLevel >= 1)
+        if (AnimationAssist.AnimationLevel >= 1)
         {
             PseudoClasses.Set(":animated", true);
         }

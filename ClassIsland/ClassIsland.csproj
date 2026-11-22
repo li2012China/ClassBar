@@ -126,9 +126,7 @@
             <PublishFolderType>Resource</PublishFolderType>
         </None>
         <None Remove="Assets\AppLogo.ico" />
-        <None Remove="Assets\Tutorials\**" />
         <None Remove="Assets\TrustedPublicKeys\**" />
-        <AvaloniaResource Include="Assets\Tutorials\**" />
         <AvaloniaResource Include="Assets\TrustedPublicKeys\**" />
         <AvaloniaResource Include="Assets\AppLogo.ico" />
     </ItemGroup>

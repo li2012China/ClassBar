@@ -36,6 +36,7 @@ public partial class MainViewModel : ObservableRecipient
     private DateTime _firstProcessNotifications = DateTime.MinValue;
     private DateTime _debugCurrentTime = DateTime.Now;
     private bool _isNotificationWindowExplicitShowed = false;
+    private bool _isMainWindowCollapsed = false;
     private bool _isHideRuleSatisfied = false;
     private string? _lastStoryboardName;
     private NotificationContent? _currentMaskContent;
@@ -43,10 +44,8 @@ public partial class MainViewModel : ObservableRecipient
     private double _actualRootOffsetX = 0;
     private double _actualRootOffsetY = 0.0;
     private Rect _actualClientBound = new();
+    private bool _isProfileTabOpen;
     private ObservableCollection<Control> _effectControls = [];
-    private bool _isEditMode = false;
-    private bool _editModeIsWindowMode = true;
-    private EditModeView? _editModeView = null;
 
 
     public Profile Profile
@@ -270,6 +269,20 @@ public partial class MainViewModel : ObservableRecipient
         }
     }
 
+    /// <summary>
+    /// 主界面是否因无时间/课程而收起。
+    /// </summary>
+    public bool IsMainWindowCollapsed
+    {
+        get => _isMainWindowCollapsed;
+        set
+        {
+            if (value == _isMainWindowCollapsed) return;
+            _isMainWindowCollapsed = value;
+            OnPropertyChanged();
+        }
+    }
+
     public bool IsNotificationWindowExplicitShowed
     {
         get => _isNotificationWindowExplicitShowed;
@@ -324,7 +337,18 @@ public partial class MainViewModel : ObservableRecipient
             OnPropertyChanged();
         }
     }
-    
+
+    public bool IsProfileTabOpen
+    {
+        get => _isProfileTabOpen;
+        set
+        {
+            if (value == _isProfileTabOpen) return;
+            _isProfileTabOpen = value;
+            OnPropertyChanged();
+        }
+    }
+
     public ObservableCollection<Control> EffectControls
     {
         get => _effectControls;
@@ -336,52 +360,11 @@ public partial class MainViewModel : ObservableRecipient
         }
     }
 
-    public bool IsEditMode
-    {
-        get => _isEditMode;
-        set
-        {
-            if (value == _isEditMode) return;
-            _isEditMode = value;
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(IsWindowMode));
-        }
-    }
-
-    public bool EditModeIsWindowMode
-    {
-        get => _editModeIsWindowMode;
-        set
-        {
-            if (value == _editModeIsWindowMode) return;
-            _editModeIsWindowMode = value;
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(IsWindowMode));
-        }
-    }
-
-    public bool IsWindowMode => EditModeIsWindowMode && IsEditMode;
-
-    public EditModeView? EditModeView
-    {
-        get => _editModeView;
-        set
-        {
-            if (Equals(value, _editModeView)) return;
-            _editModeView = value;
-            OnPropertyChanged();
-        }
-    }
-    
     [ObservableProperty] private MainWindowLineSettings? _selectedMainWindowLineSettings;
     [ObservableProperty] private ObservableCollection<EditableComponentsListBox> _componentsListBoxCache = [];
     [ObservableProperty] private Dictionary<MainWindowLineSettings, EditableComponentsListBox> _mainWindowLineListBoxCache = new();
     [ObservableProperty] private Dictionary<EditableComponentsListBox, MainWindowLineSettings> _mainWindowLineListBoxCacheReversed = new();
     [ObservableProperty] private ComponentSettings? _selectedComponentSettings;
     
-    [ObservableProperty] private ObservableCollection<EditModeContainerComponentInfo> _containerComponents = [];
-    [ObservableProperty] private Dictionary<EditModeContainerComponentInfo, EditableComponentsListBox> _containerComponentListBoxCache = new();
-    [ObservableProperty] private Dictionary<EditableComponentsListBox, EditModeContainerComponentInfo> _containerComponentListBoxCacheReversed = new();
 
-    [ObservableProperty] private int _editModeTutorialPhase = -1;
 }

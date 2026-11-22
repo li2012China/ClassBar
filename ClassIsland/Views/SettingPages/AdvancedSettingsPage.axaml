@@ -14,16 +14,6 @@
                               Title="小心！" IsClosable="False"
                               Message="修改本页面的设置存在风险，请谨慎操作。"
                               IsOpen="True"/>
-            <!-- 自动禁用异常插件 -->
-            <controls:SettingsExpander IconSource="{ci:FluentIconSource &#xE073;}" 
-                                        Header="自动禁用异常插件"
-                                        Description="启用后，ClassIsland 将自动禁用导致应用崩溃的插件，以避免异常插件进一步影响后续使用。"
-                                        >
-                <controls:SettingsExpander.Footer>
-                    <ToggleSwitch IsChecked="{Binding ViewModel.SettingsService.Settings.AutoDisableCorruptPlugins, Mode=TwoWay}"/>
-                </controls:SettingsExpander.Footer>
-            </controls:SettingsExpander>
-            
             <!-- 渲染模式 -->
             <controls:SettingsExpander IconSource="{ci:FluentIconSource &#xE62F;}" 
                                         Header="渲染模式"

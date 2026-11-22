@@ -22,7 +22,6 @@ using ClassIsland.Core.Extensions.Registry;
 using ClassIsland.Core.Helpers;
 using ClassIsland.Core.Models.Logging;
 using ClassIsland.Core.Models.Ruleset;
-using ClassIsland.Core.Models.XamlTheme;
 using ClassIsland.Helpers.ProfileTransferHelpers;
 using ClassIsland.Models.Actions;
 using ClassIsland.Models.Automation.Triggers;
@@ -39,7 +38,6 @@ using ClassIsland.Services.Metadata;
 using ClassIsland.Services.NotificationProviders;
 using ClassIsland.Services.SpeechService;
 using ClassIsland.ViewModels;
-using ClassIsland.ViewModels.EditMode;
 using ClassIsland.ViewModels.SettingsPages;
 using ClassIsland.Views;
 using ClassIsland.Views.SettingPages;
@@ -62,7 +60,6 @@ public partial class App
         // services.AddSingleton<WallpaperPickingService>();
         services.AddSingleton<INotificationHostService, NotificationHostService>();
         services.AddSingleton<INotificationWorkerService, NotificationWorkerService>();
-        services.AddSingleton<IThemeService, ThemeService>();
         services.AddSingleton<MiniInfoProviderHostService>();
         services.AddSingleton<IWeatherService, WeatherService>();
         services.AddSingleton<FileFolderService>();
@@ -79,8 +76,6 @@ public partial class App
         services.AddSingleton<ILessonsService, LessonsService>();
         services.AddSingleton<IUriNavigationService, UriNavigationService>();
         services.AddHostedService<MemoryWatchDogService>();
-        services.AddSingleton<IPluginService, PluginService>();
-        services.AddSingleton<IPluginMarketService, PluginMarketService>();
         services.AddSingleton<IRulesetService, RulesetService>();
         services.AddSingleton<IActionService, ActionService>();
         services.AddSingleton<IWindowRuleService, WindowRuleService>();
@@ -96,36 +91,26 @@ public partial class App
         services.AddSingleton<TrayMenuTriggerHandlerService>();
         services.AddSingleton<IAnnouncementService, AnnouncementService>();
         services.AddSingleton<ILocationService>(PlatformServices.LocationService);
-        services.AddSingleton<IXamlThemeService, XamlThemeService>();
         services.AddSingleton<IAudioService, AudioService>();
-        services.AddSingleton<ITutorialService, TutorialService>();
         services.AddSingleton<IRefreshingService, RefreshingService>();
         // ViewModels
         services.AddTransient<ProfileSettingsViewModel>();
         services.AddTransient<DevPortalViewModel>();
         services.AddTransient<AppLogsViewModel>();
-        services.AddTransient<WelcomeViewModel>();
         services.AddTransient<ClassChangingViewModel>();
-        services.AddTransient<DataTransferViewModel>();
         services.AddTransient<ScreenshotHelperViewModel>();
-        services.AddTransient<EditModeViewModel>();
-        services.AddTransient<TutorialEditorViewModel>();
-        services.AddTransient<TutorialCenterViewModel>();
         // ViewModels/SettingsPages
         services.AddTransient<GeneralSettingsViewModel>();
         services.AddTransient<ClockSettingsViewModel>();
         services.AddTransient<AdvancedSettingsViewModel>();
         services.AddTransient<AboutSettingsViewModel>();
         services.AddTransient<AppearanceSettingsViewModel>();
-        services.AddTransient<ComponentsSettingsViewModel>();
         services.AddTransient<NotificationSettingsViewModel>();
         services.AddTransient<WindowSettingsViewModel>();
         services.AddTransient<WeatherSettingsViewModel>();
         services.AddTransient<AutomationSettingsViewModel>();
-        services.AddTransient<PluginsSettingsPageViewModel>();
         services.AddTransient<StorageSettingsViewModel>();
         services.AddTransient<ErrorSettingsViewModel>();
-        services.AddTransient<ThemesSettingsViewModel>();
         services.AddTransient<UpdateSettingsPageViewModel>();
         services.AddTransient<DebugPageViewModel>();
         services.AddTransient<RefreshingSettingsViewModel>();
@@ -144,13 +129,7 @@ public partial class App
         services.AddTransient<TimeAdjustmentWindow>();
         // services.AddTransient<ExcelExportWindow>();
         services.AddTransient<DevPortalWindow>();
-        services.AddTransient<WelcomeWindow>();
-        services.AddTransient<DataTransferWindow>();
         services.AddTransient<ScreenshotHelperWindow>();
-        services.AddSingleton<EditModeView>();
-        services.AddTransient<TutorialEditorWindow>();
-        services.AddSingleton<TutorialCenterWindow>();
-        services.AddTransient<TutorialControllerWindow>();
         services.AddTransient<ISplashProvider, SplashWindow>();
         // 设置页面分组
         services.AddSettingsPageGroup("classisland.general", "\uef27", "通用");
@@ -159,11 +138,11 @@ public partial class App
         services.AddSettingsPage<GeneralSettingsPage>();
         services.AddSettingsPage<ClockSettingsPage>();
         services.AddSettingsPage<StorageSettingsPage>();
-        services.AddSettingsPage<PrivacySettingsPage>();
         services.AddSettingsPage<RefreshingSettingsPage>();
         services.AddSettingsPage<AdvancedSettingsPage>();
-        services.AddSettingsPage<ComponentsSettingsPage>();
+        services.AddSettingsPage<ProfileSettingsPage>();
         services.AddSettingsPage<AppearanceSettingsPage>();
+        services.AddSettingsPage<AnimationTestSettingsPage>();
         services.AddSettingsPage<NotificationSettingsPage>();
         services.AddSettingsPage<WindowSettingsPage>();
         services.AddSettingsPage<WeatherSettingsPage>();
@@ -172,8 +151,6 @@ public partial class App
         {
             services.AddSettingsPage<UpdateSettingsPage>();
         }
-        services.AddSettingsPage<PluginsSettingsPage>();
-        services.AddSettingsPage<ThemesSettingsPage>();
         services.AddSettingsPage<TestSettingsPage>();
         services.AddSettingsPage<DebugPage>();
         // services.AddSettingsPage<DebugBrushesSettingsPage>();
@@ -293,34 +270,5 @@ public partial class App
         services.AddProfileTransferProvider<ClassIsland1ImportProvider>("classisland.profileTransfer.import.legacyV1", "从 ClassIsland 1.x 导入", ProfileTransferProviderType.Import, "bitmap(avares://ClassIsland/Assets/AppLogo.png)");
         services.AddProfileTransferProvider<ClassWidgets1ImportProvider>("classisland.profileTransfer.import.classWidgets", "从 Class Widgets 1.2 导入", ProfileTransferProviderType.Import);
         services.AddProfileTransferProvider("classisland.profileTransfer.export.cses", "导出到 CSES", ProfileTransferProviderType.Export, CsesExportHelper.CsesExportHandler, "\ue6cb");
-        // Themes
-        services.AddXamlTheme(new Uri("avares://ClassIsland/XamlThemes/ClassicTheme/Styles.axaml"), new ThemeManifest()
-        {
-            Id = "classisland.classic",
-            Name = "经典",
-            Description = "ClassIsland 的经典外观。",
-            Banner = "avares://ClassIsland/Assets/XamlThemePreviews/classisland.classic.png",
-            Author = "ClassIsland",
-            Url = "https://github.com/ClassIsland/ClassIsland"
-        });
-        services.AddXamlTheme(new Uri("avares://ClassIsland/XamlThemes/FluentTheme/Styles.axaml"), new ThemeManifest()
-        {
-            Id = "classisland.fluent",
-            Name = "Fluent",
-            Description = "焕然一新的 ClassIsland 外观。",
-            Banner = "avares://ClassIsland/Assets/XamlThemePreviews/classisland.fluent.png",
-            Author = "ClassIsland",
-            Url = "https://github.com/ClassIsland/ClassIsland",
-            VerticalSafeAreaPx = 20
-        });
-        // 教程
-        // services.AddTutorialGroupByUri(new Uri("avares://ClassIsland/Assets/Tutorials/classisland.test.json"));
-        // services.AddTutorialGroupByUri(new Uri("avares://ClassIsland/Assets/Tutorials/classisland.sp.json"));
-        services.AddTutorialGroupByUri(new Uri("avares://ClassIsland/Assets/Tutorials/classisland.getStarted.json"));
-        // Plugins
-        if (!ApplicationCommand.Safe && string.IsNullOrWhiteSpace(ApplicationCommand.ImportV1) && string.IsNullOrWhiteSpace(ApplicationCommand.ImportV2))
-        {
-            PluginService.InitializePlugins(context, services);
-        }
     }
 }

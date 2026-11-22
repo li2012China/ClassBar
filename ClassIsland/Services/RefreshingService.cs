@@ -1,11 +1,22 @@
 using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.IO;
+using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
+using Avalonia.Controls;
+using Avalonia.Platform;
 using ClassIsland.Core;
 using ClassIsland.Core.Abstractions.Services;
+using ClassIsland.Core.Helpers.UI;
+using ClassIsland.Core.Models.Automation;
+using ClassIsland.Models.Refreshing;
 using ClassIsland.Platforms.Abstraction;
 using ClassIsland.Platforms.Abstraction.Models;
 using ClassIsland.Shared;
 using ClassIsland.Shared.Helpers;
+using ClassIsland.Shared.Models.Profile;
 using ClassIsland.Views;
 using FluentAvalonia.UI.Controls;
 
@@ -108,16 +119,79 @@ public class RefreshingService(SettingsService settingsService, IExactTimeServic
 
     public async Task<bool> BeginRefresh(bool isOnboarding=false)
     {
-        var welcomeWin = IAppHost.GetService<WelcomeWindow>();
-        welcomeWin.ViewModel.RefreshingScopes =
-            ConfigureFileHelper.CopyObject(SettingsService.Settings.RefreshingScopes);
-        welcomeWin.SetWelcomeExperience(true, isOnboarding, false);
-        await welcomeWin.ShowDialog(AppBase.Current.GetRootWindow());
-        if (!isOnboarding)
+        var scopes = ConfigureFileHelper.CopyObject(SettingsService.Settings.RefreshingScopes);
+        var dialog = new RefreshingScopesConfigDialog() { Scopes = scopes };
+        await dialog.ShowDialog((Window)AppBase.Current.GetRootWindow());
+
+        var profile = IAppHost.GetService<IProfileService>().Profile;
+        await FileFolderService.CreateBackupAsync();
+
+        if (!scopes.Profile)
         {
+            if (scopes.ProfileClassPlans)
+            {
+                foreach (var (key, _) in profile.ClassPlans.Where(x => !scopes.ReservedClassPlans.Contains(x.Key))
+                             .ToDictionary())
+                {
+                    profile.ClassPlans.Remove(key);
+                }
+            }
+
+            var requiredTimeLayouts = profile.ClassPlans.Select(x => x.Value.TimeLayoutId).ToHashSet();
+            if (scopes.ProfileTimeLayouts)
+            {
+                foreach (var (key, _) in profile.TimeLayouts
+                             .Where(x => !scopes.ReservedTimeLayouts.Contains(x.Key)
+                                         && !requiredTimeLayouts.Contains(x.Key))
+                             .ToDictionary())
+                {
+                    profile.TimeLayouts.Remove(key);
+                }
+            }
+        }
+        else
+        {
+            var profileNew = new Profile();
+            using var streamReader = new StreamReader(AssetLoader.Open(
+                new Uri("avares://ClassIsland/Assets/default-subjects.json", UriKind.Absolute)));
+            var subject = await streamReader.ReadToEndAsync();
+            profile.Subjects = JsonSerializer.Deserialize<Profile>(subject)!.Subjects;
+            var json = JsonSerializer.Serialize(profileNew);
+            var newFile = Guid.NewGuid().ToString();
+            await File.WriteAllTextAsync(Path.Combine(ProfileService.ProfilePath, $"{newFile}.json"), json);
+            SettingsService.Settings.SelectedProfile = $"{newFile}.json";
+        }
+
+        if (scopes.Components)
+        {
+            var newName = Guid.NewGuid().ToString();
+            var path = Path.Combine(ComponentsService.ComponentSettingsPath, newName + ".json");
+            ConfigureFileHelper.SaveConfig(path, ComponentsService.DefaultComponentProfile);
+            IAppHost.GetService<IComponentsService>().RefreshConfigs();
+            SettingsService.Settings.CurrentComponentConfig = newName;
+        }
+
+        if (scopes.Automations)
+        {
+            var newName = Guid.NewGuid().ToString();
+            var path = Path.Combine(AutomationService.AutomationConfigsFolderPath, newName + ".json");
+            ConfigureFileHelper.SaveConfig(path, new ObservableCollection<Workflow>());
+            IAppHost.GetService<IAutomationService>().RefreshConfigs();
+            SettingsService.Settings.CurrentAutomationConfig = newName;
+        }
+
+        if (!scopes.Profile)
+        {
+            await PlatformServices.DesktopToastService.ShowToastAsync("翻新成功", "已按所选范围重置 ClassIsland 数据。");
             return false;
         }
 
-        return welcomeWin.ViewModel is { IsWizardCompleted: false };
+        List<string> args = ["--refreshing", "-m"];
+        if (isOnboarding)
+        {
+            args.Add("--onboarding");
+        }
+        AppBase.Current.Restart(args.ToArray());
+        return isOnboarding;
     }
 }

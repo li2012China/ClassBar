@@ -254,6 +254,15 @@ public class UpdateService : IHostedService, INotifyPropertyChanged
 
     public async Task CheckUpdateAsync(bool isForce=false, bool isCancel=false)
     {
+        // 保留“检查更新”页面，但此 Fork 不接入更新源：
+        // 检查更新仅记录检查时间并把状态置为已是最新版本，不会下载或安装任何更新。
+        Settings.LastUpdateStatus = UpdateStatus.UpToDate;
+        Settings.LastCheckUpdateTime = DateTime.Now;
+        await Task.CompletedTask;
+    }
+
+    public async Task CheckUpdateAsyncOriginal(bool isForce = false, bool isCancel = false)
+    {
         if (!AllowedPackageTypes.Contains(AppBase.Current.PackagingType))
         {
             return;

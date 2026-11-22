@@ -51,11 +51,6 @@ public class UriNavigationService : IUriNavigationService
         HandleNavigation(IUriNavigationService.UriDomainApp, path, onNavigated);
     }
 
-    public void HandlePluginsNavigation(string path, Action<UriNavigationEventArgs> onNavigated)
-    {
-        HandleNavigation(IUriNavigationService.UriDomainPlugins, path, onNavigated);
-    }
-
     public void Navigate(Uri uri)
     {
         Dispatcher.UIThread.Invoke(() =>

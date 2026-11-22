@@ -15,7 +15,6 @@ using Avalonia.Threading;
 using ClassIsland.Core;
 using ClassIsland.Core.Abstractions.Services;
 using ClassIsland.Core.Enums;
-using ClassIsland.Core.Models.Plugin;
 using ClassIsland.Services.Logging;
 using ClassIsland.Services.Management;
 
@@ -48,11 +47,6 @@ public class DiagnosticService(SettingsService settingsService, FileFolderServic
     {
         var settings = SettingsService.Settings;
         GetDeviceInfo(out var name, out var vendor);
-        List<string> loadedPlugin = new();
-        foreach (var plugin in PluginService.PluginLoadedStatus)
-        {
-            if (plugin.LoadStatus is PluginLoadStatus.Loaded) loadedPlugin.Add(plugin.Manifest.Name + $"({plugin.Manifest.Id},{plugin.Manifest.Version})");
-        }
         var list = new Dictionary<string, string>
         {
             {"SystemOsVersion",  RuntimeInformation.OSDescription},
@@ -68,7 +62,6 @@ public class DiagnosticService(SettingsService settingsService, FileFolderServic
             {"AppStartupDurationMs", StartupDurationMs.ToString()},
             {"AppVersion", App.AppVersionLong},
             {"AppSubChannel", AppBase.Current.AppSubChannel},
-            {"AppLoadedPlugin",loadedPlugin.Count<=0 ? "None" : string.Join(", ",loadedPlugin)},
             {"AppIsAssetsTrimmed", AppBase.Current.IsAssetsTrimmed().ToString()},
             {
                 nameof(settings.DiagnosticFirstLaunchTime),
@@ -238,22 +231,10 @@ public class DiagnosticService(SettingsService settingsService, FileFolderServic
             return;
         }
 
-        // CopyException();
-        List<PluginInfo> plugins = [];
-        if (ex != null)
-        {
-            plugins = GetPluginsByStacktrace(ex);
-        }
-
-        DisableCorruptPlugins(plugins);
-        var pluginsWarning = Environment.NewLine + Environment.NewLine +
-                             "此问题可能由以下插件引起，请在向 ClassIsland 开发者反馈问题前先向以下插件的开发者反馈此问题：" + Environment.NewLine
-                             + string.Join(Environment.NewLine,
-                                 plugins.Select(x => $"- {x.Manifest.Name} [{x.Manifest.Id}]"));
         var message = $"""
                        很抱歉，ClassIsland 遇到了无法解决的问题，即将退出。堆栈跟踪信息已复制到剪贴板。点击【确定】将退出应用，点击【取消】将启动调试器。
 
-                       错误信息：{ex?.Message}{(plugins.Count > 0 ? pluginsWarning : "")}
+                       错误信息：{ex?.Message}
 
                        如果您要反馈这个问题或求助，请不要只上传本窗口的截图。请查阅事件查看器和日志获取完整的错误信息，并附加在求助信息中。
                        """;
@@ -279,78 +260,4 @@ public class DiagnosticService(SettingsService settingsService, FileFolderServic
         // }
     }
 
-    /// <summary>
-    /// 通过堆栈跟踪获取相关插件
-    /// </summary>
-    /// <param name="exception">堆栈信息</param>
-    /// <returns>获取到的插件列表</returns>
-    public static List<PluginInfo> GetPluginsByStacktrace(Exception exception)
-    {
-        var stack = new StackTrace(exception);
-        var frames = stack.GetFrames();
-        var plugins = new List<PluginInfo>();
-        foreach (var frame in frames)
-        {
-            var declaringTypeAssembly = frame.GetMethod()?.DeclaringType?.Assembly;
-            if (declaringTypeAssembly == null)
-            {
-                continue;
-            }
-            var context = AssemblyLoadContext.GetLoadContext(declaringTypeAssembly);
-            if (context is not PluginLoadContext pluginLoadContext)
-            {
-                continue;
-            }
-
-            if (!plugins.Contains(pluginLoadContext.Info))
-            {
-                plugins.Add(pluginLoadContext.Info);
-            }
-        }
-
-        if (exception.InnerException != null)
-        {
-            plugins.AddRange(GetPluginsByStacktrace(exception.InnerException));
-        }
-
-        return plugins;
-    }
-
-    /// <summary>
-    /// 禁用损坏的插件
-    /// </summary>
-    /// <param name="plugins">插件列表</param>
-    /// <returns>是否禁用成功</returns>
-    public static bool DisableCorruptPlugins(List<PluginInfo> plugins)
-    {
-        var isPluginAutoDisabled = false;
-        if (App.AutoDisableCorruptPlugins && plugins.Count > 0)
-        {
-            foreach (var plugin in plugins)
-            {
-                try
-                {
-                    plugin.IsEnabled = false;
-                    isPluginAutoDisabled = true;
-                }
-                catch
-                {
-                    // ignored
-                }
-            }
-        }
-
-        if (!isPluginAutoDisabled)
-            return isPluginAutoDisabled;
-        try
-        {
-            ((App)AppBase.Current).Settings.CorruptPluginsDisabledLastSession = true;
-        }
-        catch
-        {
-            // ignored
-        }
-
-        return isPluginAutoDisabled;
-    }
 }

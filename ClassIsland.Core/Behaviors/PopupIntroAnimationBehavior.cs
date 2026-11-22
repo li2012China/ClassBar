@@ -64,7 +64,7 @@ public class PopupIntroAnimationBehavior
             return;
         }
 
-        if (IThemeService.AnimationLevel < 1)
+        if (AnimationAssist.AnimationLevel < 1)
         {
             return;
         }

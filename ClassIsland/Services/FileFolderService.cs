@@ -28,16 +28,10 @@ public class FileFolderService(SettingsService settingsService, ILogger<FileFold
         CommonDirectories.AppCacheFolderPath,
         UpdateService.UpdateCachePath,
         EdgeTtsService.EdgeTtsCacheFolderPath,
-        PluginService.PluginsPkgRootPath,
-        PluginService.PluginsRootPath,
-        PluginService.PluginConfigsFolderPath,
-        PluginService.PluginsIndexPath,
         Path.Combine(CommonDirectories.AppRootFolderPath, "Backups"),
         CommonDirectories.AppLogFolderPath,
         AutomationService.AutomationConfigsFolderPath,
-        ManagementService.LocalManagementConfigureFolderPath,
-        XamlThemeService.ThemesPath,
-        XamlThemeService.ThemesPkgRootPath
+        ManagementService.LocalManagementConfigureFolderPath
     ];
 
     public static void CreateFolders()

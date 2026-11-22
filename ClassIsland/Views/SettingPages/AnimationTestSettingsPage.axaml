@@ -1,0 +1,48 @@
+<controls:SettingsPageBase x:Class="ClassIsland.Views.SettingPages.AnimationTestSettingsPage"
+      xmlns="https://github.com/avaloniaui"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:local="clr-namespace:ClassIsland.Views.SettingPages"
+      xmlns:controls="clr-namespace:ClassIsland.Core.Abstractions.Controls;assembly=ClassIsland.Core"
+      xmlns:controls1="clr-namespace:ClassIsland.Core.Controls;assembly=ClassIsland.Core"
+      xmlns:controls2="clr-namespace:FluentAvalonia.UI.Controls;assembly=FluentAvalonia"
+      mc:Ignorable="d"
+      d:DesignHeight="450" d:DesignWidth="800"
+      d:DataContext="{d:DesignInstance local:AnimationTestSettingsPage}">
+
+    <ScrollViewer>
+        <StackPanel Classes="settings-container animated-intro">
+            <controls1:IconText Glyph="&#xE920;" Text="主界面动画" Margin="0 0 0 4" />
+            <TextBlock TextWrapping="Wrap" Margin="0 0 0 12"
+                       Text="手动播放主界面的各类事件动画，用于检查动画效果。窗口停靠在正下时，入场/收起动画将从下向上播放。"/>
+            <controls2:SettingsExpander IconSource="{controls1:FluentIconSource &#xE523;}"
+                                        Header="播放入场动画"
+                                        Description="白色块先滑入，主界面颜色块随后进入并盖住它，主界面文字随色块同步滑入。"
+                                        IsClickEnabled="True"
+                                        Click="ButtonPlayEntrance_OnClick"/>
+            <controls2:SettingsExpander IconSource="{controls1:FluentIconSource &#xE738;}"
+                                        Header="播放收起动画"
+                                        Description="反向播放入场动画，主界面随色块一起滑出。"
+                                        IsClickEnabled="True"
+                                        Click="ButtonPlayCollapse_OnClick"/>
+            <controls2:SettingsExpander IconSource="{controls1:FluentIconSource &#xE95F;}"
+                                        Header="显示启动欢迎信息"
+                                        Description="显示 5 秒“启动成功，欢迎！Fork by li2012China”。"
+                                        IsClickEnabled="True"
+                                        Click="ButtonShowWelcome_OnClick"/>
+            <controls2:SettingsExpander x:Name="PreviewExpander"
+                                        IconSource="{controls1:FluentIconSource &#xE916;}"
+                                        Header="快速预览今日时间表"
+                                        Description="今日时间表的每个时间点（上课/课间）各播放 10 秒，逐段快进播放全部内容与切换动画（上课收起、课间入场），相当于快速检查主界面一整天的显示与动画效果；预览期间会暂时关闭提醒。"
+                                        IsClickEnabled="True"
+                                        Click="ButtonPlayTodaySchedule_OnClick"/>
+            <StackPanel x:Name="PreviewStatusPanel" IsVisible="False" Margin="0 10 0 0" Spacing="8">
+                <TextBlock x:Name="PreviewStatusText" TextWrapping="Wrap" Text="准备预览…"/>
+                <ProgressBar x:Name="PreviewProgressBar" Minimum="0" Maximum="1" Value="0" Height="6"/>
+                <Button x:Name="PreviewStopButton" Content="停止预览" HorizontalAlignment="Left"
+                        Click="ButtonStopTodaySchedule_OnClick"/>
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</controls:SettingsPageBase>

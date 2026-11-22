@@ -33,7 +33,7 @@ public abstract class SplashWindowBase : Window, ISplashProvider
     /// </summary>
     protected static void TryRunJobs()
     {
-        if (IThemeService.IsWaitForTransientDisabled)
+        if (AnimationAssist.IsWaitForTransientDisabled)
         {
             return;
         }
@@ -46,7 +46,7 @@ public abstract class SplashWindowBase : Window, ISplashProvider
     /// </summary>
     protected static async Task TryWaitJobs()
     {
-        if (IThemeService.IsWaitForTransientDisabled)
+        if (AnimationAssist.IsWaitForTransientDisabled)
         {
             return;
         }

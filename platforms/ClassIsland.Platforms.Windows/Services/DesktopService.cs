@@ -1,5 +1,4 @@
 using ClassIsland.Core;
-using ClassIsland.Helpers;
 using ClassIsland.Platforms.Abstraction.Services;
 using WindowsShortcutFactory;
 
@@ -27,20 +26,6 @@ public class DesktopService : IDesktopService
                 File.Delete(path);
             }
             
-        }
-    }
-    public bool IsUrlSchemeRegistered{
-        get => UriProtocolRegisterHelper.IsRegistered();
-        set
-        {
-            if (value)
-            {
-                UriProtocolRegisterHelper.Register();
-            }
-            else
-            {
-                UriProtocolRegisterHelper.UnRegister();
-            }
         }
     }
 }

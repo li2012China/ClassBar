@@ -18,6 +18,6 @@ public class Win32WindowManagerConstructorPatcher
     
     static bool Prefix(AppWindow window)
     {
-        return !IThemeService.UseNativeTitlebar;
+        return !AnimationAssist.UseNativeTitlebar;
     }
 }

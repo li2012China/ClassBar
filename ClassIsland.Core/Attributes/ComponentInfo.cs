@@ -1,6 +1,5 @@
 ﻿using System.Drawing;
 using ClassIsland.Core.Helpers.UI;
-using ClassIsland.Core.Models.Plugin;
 using FluentAvalonia.UI.Controls;
 
 namespace ClassIsland.Core.Attributes;
@@ -64,19 +63,9 @@ public class ComponentInfo : Attribute
     internal List<string> MigrateSources { get; } = new();
 
     /// <summary>
-    /// 组件来源插件。<c>null</c> 表示 ClassIsland 内置组件。
-    /// </summary>
-    public PluginInfo? SourcePlugin { get; internal set; }
-
-    /// <summary>
-    /// 是否为内置组件。
-    /// </summary>
-    public bool IsBuiltIn => SourcePlugin is null;
-
-    /// <summary>
     /// 用于 UI 展示的来源名称。
     /// </summary>
-    public string SourceName => SourcePlugin?.Manifest.Name ?? "内置";
+    public string SourceName => "内置";
 
     /// <inheritdoc />
     public ComponentInfo(string guid, string name, string iconSource, string description = "") : this(guid, name,

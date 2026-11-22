@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using Avalonia;
@@ -34,7 +35,6 @@ using ClassIsland.Core.Helpers.Native;
 using ClassIsland.Core.Helpers.UI;
 using ClassIsland.Core.Models.Components;
 using ClassIsland.Core.Models.Notification;
-using ClassIsland.Core.Models.Tutorial;
 using ClassIsland.Helpers;
 using ClassIsland.Models.EventArgs;
 using ClassIsland.Platforms.Abstraction;
@@ -44,8 +44,10 @@ using ClassIsland.Shared.Abstraction.Models;
 using ClassIsland.Shared.Abstraction.Services;
 using ClassIsland.Shared.Interfaces;
 using ClassIsland.Shared.Models.Notification;
+using ClassIsland.Shared.Models.Profile;
 using ClassIsland.Services;
 using ClassIsland.Shared;
+using ClassIsland.Shared.Enums;
 using ClassIsland.Shared.Interfaces.Controls;
 using ClassIsland.ViewModels;
 using ClassIsland.Views;
@@ -68,7 +70,7 @@ namespace ClassIsland;
 /// <summary>
 /// Interaction logic for MainWindow.xaml
 /// </summary>
-[PseudoClasses(":dock-top", ":dock-bottom", ":edit-mode", ":windowed", ":no-windowed-transparent")]
+[PseudoClasses(":dock-top", ":dock-bottom", ":windowed", ":no-windowed-transparent")]
 public partial class MainWindow : Window, ITopmostEffectPlayer
 {
     #region Fields & Properties
@@ -90,11 +92,6 @@ public partial class MainWindow : Window, ITopmostEffectPlayer
     }
 
     private ITaskBarIconService TaskBarIconService
-    {
-        get;
-    }
-
-    private IThemeService ThemeService
     {
         get;
     }
@@ -131,7 +128,6 @@ public partial class MainWindow : Window, ITopmostEffectPlayer
     private double _latestDpiX = 1.0;
     private double _latestDpiY = 1.0;
 
-    private const int WindowedEditModeScreenMargin = 60;
 
     private DispatcherTimer HighFreqTopmostRecheckTimer { get; } = new()
     {
@@ -150,9 +146,6 @@ public partial class MainWindow : Window, ITopmostEffectPlayer
     public IManagementService ManagementService { get; }
     public TopmostEffectWindow TopmostEffectWindow { get; }
     
-    public IXamlThemeService XamlThemeService { get; }
-    private ITutorialService TutorialService { get; }
-
     public event EventHandler<MousePosChangedEventArgs>? MousePosChanged;
 
     public event EventHandler<RawInputEventArgs>? RawInputEvent;
@@ -197,7 +190,6 @@ public partial class MainWindow : Window, ITopmostEffectPlayer
         IProfileService profileService,
         INotificationHostService notificationHostService, 
         ITaskBarIconService taskBarIconService,
-        IThemeService themeService, 
         ILogger<MainWindow> logger, 
         ISpeechService speechService,
         IExactTimeService exactTimeService,
@@ -207,16 +199,13 @@ public partial class MainWindow : Window, ITopmostEffectPlayer
         IRulesetService rulesetService,
         IWindowRuleService windowRuleService,
         IManagementService managementService,
-        TopmostEffectWindow topmostEffectWindow,
-        IXamlThemeService xamlThemeService,
-        ITutorialService tutorialService)
+        TopmostEffectWindow topmostEffectWindow)
     {
         Logger = logger;
         SpeechService = speechService;
         SettingsService = settingsService;
         TaskBarIconService = taskBarIconService;
         NotificationHostService = notificationHostService;
-        ThemeService = themeService;
         ProfileService = profileService;
         ExactTimeService = exactTimeService;
         ComponentsService = componentsService;
@@ -226,18 +215,19 @@ public partial class MainWindow : Window, ITopmostEffectPlayer
         WindowRuleService = windowRuleService;
         ManagementService = managementService;
         TopmostEffectWindow = topmostEffectWindow;
-        XamlThemeService = xamlThemeService;
-        TutorialService = tutorialService;
         
         ViewModel = new MainViewModel();
         DataContext = this;
         InitializeComponent();
-        
+        ProfileTabContentHost.Content = App.GetService<ProfileSettingsWindow>();
+
+        // 防闪现：构造时先把主界面内容移出屏幕，等入场动画开始后再滑入。
+        ContentSlideTransform.Y = SlideSign * 300;
+
         RenderOptions.SetTextRenderingMode(this, TextRenderingMode.Antialias);
         RenderOptions.SetBitmapInterpolationMode(this, BitmapInterpolationMode.HighQuality);
         
         IAppHost.GetService<ISplashService>().SetDetailedStatus("正在初始化主界面（步骤 1/2）");
-        XamlThemeService.MainWindow = this;
         SettingsService.PropertyChanged += (sender, args) =>
         {
             LoadSettings();
@@ -259,10 +249,6 @@ public partial class MainWindow : Window, ITopmostEffectPlayer
             PseudoClasses.Set(":no-windowed-transparent", true);
         }
 
-#pragma warning disable CS8974 // 将方法组转换为非委托类型
-        TutorialService.Context["classisland.mainWindow.hasComponentWithSettings"] = HasComponentWithSettings;
-        TutorialService.Context["classisland.mainWindow.hasContainerComponent"] = HasContainerComponent;
-#pragma warning restore CS8974 // 将方法组转换为非委托类型
     }
 
     private void PostInit()
@@ -292,7 +278,6 @@ public partial class MainWindow : Window, ITopmostEffectPlayer
         }
 
         UriNavigationService.HandleAppNavigation("class-swap", args => OpenClassSwapWindow());
-        UriNavigationService.HandleAppNavigation("edit", args => EnterEditMode());
 
         IAppHost.GetService<ISplashService>().SetDetailedStatus("正在初始化输入");
         if (SettingsService.Settings.UseRawInput)
@@ -331,12 +316,10 @@ public partial class MainWindow : Window, ITopmostEffectPlayer
 #if DEBUG
         MemoryProfiler.GetSnapshot("MainWindow OnContentRendered");
 #endif
-        TutorialService.BeginNotCompletedTutorials("classisland.getStarted.welcome/init");
     }
 
     public override void Show()
     {
-        XamlThemeService.LoadAllThemes();
         IAppHost.GetService<ISplashService>().SetDetailedStatus("正在加载界面主题（2）");
         UpdateTheme();
         base.Show();
@@ -463,6 +446,7 @@ public partial class MainWindow : Window, ITopmostEffectPlayer
             ReCheckTopmostState();
             SetBottom();
         }
+        UpdateBreakRotation();
     }
 
     private void LessonsServiceOnPreMainTimerTicked(object? sender, EventArgs e)
@@ -507,60 +491,11 @@ public partial class MainWindow : Window, ITopmostEffectPlayer
             UpdateFadeStatus();
         }
 
-        if (e.PropertyName == nameof(ViewModel.IsEditMode))
+        if (e.PropertyName == nameof(ViewModel.IsProfileTabOpen))
         {
-            PseudoClasses.Set(":edit-mode", ViewModel.IsEditMode);
-            if (ViewModel.IsEditMode)
-            {
-                Activate();
-                EditModeViewCp.Content = ViewModel.EditModeView = IAppHost.GetService<EditModeView>();
-            }
-            else
-            {
-                EditModeViewCp.Content = ViewModel.EditModeView = null;
-                ZoomBorder.ResetMatrix();
-            }
-
-            TopmostEffectWindow.ViewModel.IsEditMode = ViewModel.IsEditMode;
-            UpdateWindowLayer();
-            UpdateTheme();
-            _ = Dispatcher.UIThread.InvokeAsync(UpdateTheme);
+            UpdateProfileTabWindowState();
         }
         
-        if (e.PropertyName == nameof(ViewModel.IsWindowMode))
-        {
-            var shouldReattachTutorialAdorners = TutorialService.IsTutorialRunning && TutorialService.AttachedToplevel == this;
-            if (shouldReattachTutorialAdorners)
-            {
-                TutorialService.DetachCurrentAdornersForHostChange(this);
-            }
-
-            PseudoClasses.Set(":windowed", ViewModel.IsWindowMode);
-            UpdateTheme();
-            if (ViewModel.IsEditMode && ViewModel.IsWindowMode)
-            {
-                ApplyWindowedEditModeBounds();
-                // 编辑模式从全屏切到自由窗口时，窗口管理器可能把窗口压到后面。
-                // 延后一帧激活，确保窗口保持在前台可操作。
-                _ = Dispatcher.UIThread.InvokeAsync(Activate, DispatcherPriority.Background);
-            }
-
-            if (shouldReattachTutorialAdorners)
-            {
-                _ = Dispatcher.UIThread.InvokeAsync(() =>
-                    TutorialService.ReattachCurrentAdornersAfterHostChange(this), DispatcherPriority.Background);
-            }
-        }
-
-        if (e.PropertyName == nameof(ViewModel.SelectedComponentSettings))
-        {
-            TutorialService.Context["classisland.mainWindow.editMode.isComponentsSelected"] =
-                ViewModel.SelectedComponentSettings != null;
-            TutorialService.Context["classisland.mainWindow.editMode.selectedComponent.hasSettings"] =
-                ViewModel.SelectedComponentSettings is { AssociatedComponentInfo.SettingsType: not null };
-            TutorialService.Context["classisland.mainWindow.editMode.selectedComponent.isContainer"] =
-                ViewModel.SelectedComponentSettings is { AssociatedComponentInfo.IsComponentContainer: true };
-        }
     }
 
     private void OnSystemEventsOnUserPreferenceChanged(object? sender, PlatformColorValues args)
@@ -580,10 +515,6 @@ public partial class MainWindow : Window, ITopmostEffectPlayer
                                      e.CloseReason != WindowCloseReason.ApplicationShutdown))
         {
             e.Cancel = true;
-            if (ViewModel.IsEditMode)
-            {
-                ExitEditMode();
-            }
             return;
         }
         AppBase.Current.Stop();
@@ -591,8 +522,389 @@ public partial class MainWindow : Window, ITopmostEffectPlayer
 
     private void MainWindow_OnLoaded(object sender, RoutedEventArgs e)
     {
-        
+        BeginWatchEntranceAnimation();
     }
+
+    #region 主界面入场/收起动画（双色块依次滑入，主界面文字随色块同步滑入；无时间/课程时反向播放收起）
+
+    private bool _entranceAnimationPlayed;
+    private bool _entranceAnimationWatching;
+    private bool _welcomeShown;
+    private bool _presenceBusy;
+    private bool? _pendingPresent;
+
+    /// <summary>主界面逻辑状态：true=显示（有时间/课程），false=已收起（无时间/课程）。</summary>
+    private bool _isInterfacePresent = true;
+
+    private static readonly TimeSpan EntranceDuration = TimeSpan.FromMilliseconds(1000);
+    private static readonly TimeSpan EntranceDelay = TimeSpan.FromMilliseconds(500);
+
+    /// <summary>窗口停靠在正下（WindowDockingLocation=4）时动画从下向上，其余（正上）从上向下。</summary>
+    private bool IsBottomDocking => ViewModel.Settings.WindowDockingLocation == 4;
+
+    private double SlideSign => IsBottomDocking ? 1.0 : -1.0;
+
+    /// <summary>当前是否需要显示主界面：课间/准备上课时显示；开始上课时收起（播放收起动画），除非设置了上课不隐藏。</summary>
+    private bool HasTimeOrCourse =>
+        LessonsService.CurrentState is TimeState.Breaking or TimeState.PrepareOnClass
+        || (LessonsService.CurrentState == TimeState.OnClass && !SettingsService.Settings.HideOnClass);
+
+    /// <summary>主界面内容滑入/滑出用的位移变换（位于 ZoomBorder 上）。</summary>
+    private TranslateTransform? _contentSlideTransform;
+
+    private TranslateTransform ContentSlideTransform =>
+        _contentSlideTransform ??= (ZoomBorder.RenderTransform as TranslateTransform)!;
+
+    /// <summary>
+    /// 等待主界面真正可见、布局就绪后播放入场动画（整个生命周期只播一次）。
+    /// </summary>
+    private void BeginWatchEntranceAnimation()
+    {
+        if (_entranceAnimationWatching)
+        {
+            return;
+        }
+        _entranceAnimationWatching = true;
+        // 防闪现：启动时先把主界面内容移出屏幕，等动画开始后再滑入。
+        ResetContentOffscreen();
+        LessonsService.CurrentTimeStateChanged += LessonsServiceOnCurrentTimeStateChanged;
+        GridRoot.PropertyChanged += GridRootVisibleChangedForEntrance;
+        SizeChanged += MainWindowSizeChangedForEntrance;
+        TryPlayEntranceAnimation();
+    }
+
+    private void ResetContentOffscreen()
+    {
+        var height = Math.Max(Bounds.Height, EntranceCurtainHost.Bounds.Height);
+        if (height < 10)
+        {
+            height = 300; // 布局未完成时先给一个足够大的偏移，避免内容闪现
+        }
+        ContentSlideTransform.Y = SlideSign * height;
+    }
+
+    private void GridRootVisibleChangedForEntrance(object? sender, AvaloniaPropertyChangedEventArgs e)
+    {
+        if (e.Property.Name == nameof(Visual.IsVisible))
+        {
+            TryPlayEntranceAnimation();
+        }
+    }
+
+    private void MainWindowSizeChangedForEntrance(object? sender, SizeChangedEventArgs e)
+    {
+        TryPlayEntranceAnimation();
+    }
+
+    private async void TryPlayEntranceAnimation()
+    {
+        if (_entranceAnimationPlayed || !GridRoot.IsVisible || Bounds.Height < 10)
+        {
+            return;
+        }
+        _entranceAnimationPlayed = true;
+        GridRoot.PropertyChanged -= GridRootVisibleChangedForEntrance;
+        SizeChanged -= MainWindowSizeChangedForEntrance;
+        try
+        {
+            await PlayEntranceAsync();
+            _isInterfacePresent = true;
+            if (!_welcomeShown)
+            {
+                _welcomeShown = true;
+                await ShowWelcomeAsync();
+            }
+            // 启动流程结束后，按当前时间状态决定是否收起（无时间/课程时反向播放动画收起）。
+            await ApplyPresenceAsync();
+        }
+        catch (Exception ex)
+        {
+            ContentSlideTransform.Y = 0;
+            EntranceCurtainHost.IsVisible = false;
+            WelcomeOverlay.IsVisible = false;
+            _isInterfacePresent = true;
+            ViewModel.IsMainWindowCollapsed = false;
+            Logger.LogError(ex, "播放主界面入场动画失败");
+        }
+    }
+
+    private void LessonsServiceOnCurrentTimeStateChanged(object? sender, EventArgs e)
+    {
+        Dispatcher.UIThread.InvokeAsync(async () => await ApplyPresenceAsync());
+    }
+
+    /// <summary>按当前时间状态应用主界面显示/收起（上课开始与无时间/课程时反向播放入场动画收起）。</summary>
+    private async Task ApplyPresenceAsync()
+    {
+        // 首次入场动画完成前不做自动收起/显示，避免和启动流程冲突。
+        // 快进预览期间不抑制：让上课收起/课间入场动画随状态切换正常播放，便于检查。
+        if (!_entranceAnimationPlayed)
+        {
+            return;
+        }
+        await SetMainInterfacePresentAsync(HasTimeOrCourse);
+    }
+
+    /// <summary>显示或收起主界面（带动画），忙时记录最新目标，空闲后继续处理。</summary>
+    private async Task SetMainInterfacePresentAsync(bool present)
+    {
+        if (_presenceBusy)
+        {
+            _pendingPresent = present;
+            return;
+        }
+        _presenceBusy = true;
+        try
+        {
+            while (true)
+            {
+                var target = present;
+                _pendingPresent = null;
+                if (target && !_isInterfacePresent)
+                {
+                    ViewModel.IsMainWindowCollapsed = false;
+                    await PlayEntranceAsync();
+                    _isInterfacePresent = true;
+                }
+                else if (!target && _isInterfacePresent)
+                {
+                    await PlayCollapseAsync();
+                    ViewModel.IsMainWindowCollapsed = true;
+                    _isInterfacePresent = false;
+                }
+                if (_pendingPresent is null || _pendingPresent == target)
+                {
+                    break;
+                }
+                present = _pendingPresent.Value;
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "播放主界面动画失败");
+            ContentSlideTransform.Y = 0;
+            EntranceCurtainHost.IsVisible = false;
+        }
+        finally
+        {
+            _presenceBusy = false;
+        }
+    }
+
+    /// <summary>测试动画：重播入场动画（忽略当前状态）。</summary>
+    public async Task PlayEntranceAnimationForTestAsync()
+    {
+        if (_presenceBusy)
+        {
+            return;
+        }
+        _presenceBusy = true;
+        try
+        {
+            ViewModel.IsMainWindowCollapsed = false;
+            _isInterfacePresent = true;
+            await PlayEntranceAsync();
+        }
+        finally
+        {
+            _presenceBusy = false;
+        }
+    }
+
+    /// <summary>测试动画：播放收起动画（反向入场动画）。</summary>
+    public async Task PlayCollapseAnimationForTestAsync()
+    {
+        if (_presenceBusy)
+        {
+            return;
+        }
+        _presenceBusy = true;
+        try
+        {
+            if (_isInterfacePresent && !ViewModel.IsMainWindowCollapsed)
+            {
+                await PlayCollapseAsync();
+                ViewModel.IsMainWindowCollapsed = true;
+                _isInterfacePresent = false;
+            }
+            else
+            {
+                // 已收起时先短暂显示再收起，便于观察完整动画
+                ViewModel.IsMainWindowCollapsed = false;
+                ContentSlideTransform.Y = 0;
+                await Task.Delay(300);
+                await PlayCollapseAsync();
+                ViewModel.IsMainWindowCollapsed = true;
+                _isInterfacePresent = false;
+            }
+        }
+        finally
+        {
+            _presenceBusy = false;
+        }
+    }
+
+    /// <summary>测试动画：显示 5 秒启动欢迎信息。</summary>
+    public async Task ShowWelcomeForTestAsync()
+    {
+        await ShowWelcomeAsync();
+    }
+
+    /// <summary>显示 5 秒启动欢迎信息。</summary>
+    private async Task ShowWelcomeAsync()
+    {
+        WelcomeOverlay.IsVisible = true;
+        try
+        {
+            await Task.Delay(5000);
+        }
+        finally
+        {
+            WelcomeOverlay.IsVisible = false;
+        }
+    }
+
+    private async Task PlayEntranceAsync()
+    {
+        var height = Math.Max(EntranceCurtainHost.Bounds.Height, Bounds.Height);
+        if (height <= 0)
+        {
+            ContentSlideTransform.Y = 0;
+            return;
+        }
+        var sign = SlideSign;
+
+        // 后幕=白色块先进入，前幕=可编辑的主界面颜色块随后进入并盖住它。
+        EntranceCurtainBack.Background = Brushes.White;
+        EntranceCurtainFront.Background = new SolidColorBrush(ViewModel.Settings.MainWindowCurtainColor);
+
+        // 关键：动画开始前把幕布和主界面内容都移到画面外，避免显示瞬间闪现。
+        SetCurtainOffset(EntranceCurtainBack, sign * height);
+        SetCurtainOffset(EntranceCurtainFront, sign * height);
+        ContentSlideTransform.Y = sign * height;
+        EntranceCurtainHost.IsVisible = true;
+
+        // 等窗口真正呈现，避免动画在窗口可见前就播完。
+        await Task.Delay(250);
+
+        // 白块先入；主界面内容与主色块同步滑入（文字随蓝条一起滑进）。
+        var backTask = RunCurtainSlideInAsync(EntranceCurtainBack, TimeSpan.Zero, sign * height);
+        var frontTask = RunCurtainSlideInAsync(EntranceCurtainFront, EntranceDelay, sign * height);
+        var contentTask = RunContentSlideInAsync(EntranceDelay, sign * height);
+        await Task.WhenAll(backTask, frontTask, contentTask);
+
+        // 揭幕：幕布隐去，露出主界面。前幕与主界面横条同色，揭幕不会出现颜色跳变。
+        EntranceCurtainHost.IsVisible = false;
+    }
+
+    private async Task PlayCollapseAsync()
+    {
+        var height = Math.Max(EntranceCurtainHost.Bounds.Height, Bounds.Height);
+        if (height <= 0)
+        {
+            ContentSlideTransform.Y = SlideSign * 300;
+            return;
+        }
+        var sign = SlideSign;
+
+        // 收起：先让主色幕布与主界面同色铺满（视觉无缝），再整体反向滑出。
+        EntranceCurtainBack.Background = Brushes.White;
+        EntranceCurtainFront.Background = new SolidColorBrush(ViewModel.Settings.MainWindowCurtainColor);
+        SetCurtainOffset(EntranceCurtainBack, 0);
+        SetCurtainOffset(EntranceCurtainFront, 0);
+        ContentSlideTransform.Y = 0;
+        EntranceCurtainBack.IsVisible = true;
+        EntranceCurtainFront.IsVisible = true;
+        EntranceCurtainHost.IsVisible = true;
+
+        await Task.Delay(250);
+
+        // 反着播进入动画：主色块与内容先滑出，白块延迟随后滑出。
+        var frontTask = RunCurtainSlideOutAsync(EntranceCurtainFront, TimeSpan.Zero, sign * height);
+        var contentTask = RunContentSlideOutAsync(TimeSpan.Zero, sign * height);
+        var backTask = RunCurtainSlideOutAsync(EntranceCurtainBack, EntranceDelay, sign * height);
+        await Task.WhenAll(frontTask, contentTask, backTask);
+
+        EntranceCurtainHost.IsVisible = false;
+        ContentSlideTransform.Y = sign * height; // 保持屏幕外，等待下次显示
+    }
+
+    private static void SetCurtainOffset(Border curtain, double y)
+    {
+        if (curtain.RenderTransform is TranslateTransform transform)
+        {
+            transform.Y = y;
+        }
+    }
+
+    /// <summary>幕布从屏幕外（startOffset）滑入到 0。</summary>
+    private async Task RunCurtainSlideInAsync(Border curtain, TimeSpan begin, double startOffset)
+    {
+        if (curtain.RenderTransform is not TranslateTransform transform)
+        {
+            return;
+        }
+        transform.Y = startOffset;
+        if (begin > TimeSpan.Zero)
+        {
+            await Task.Delay(begin);
+        }
+        await EaseTransformAsync(transform, startOffset, 0);
+    }
+
+    /// <summary>幕布从 0 滑出到屏幕外（endOffset）。</summary>
+    private async Task RunCurtainSlideOutAsync(Border curtain, TimeSpan begin, double endOffset)
+    {
+        if (curtain.RenderTransform is not TranslateTransform transform)
+        {
+            return;
+        }
+        transform.Y = 0;
+        if (begin > TimeSpan.Zero)
+        {
+            await Task.Delay(begin);
+        }
+        await EaseTransformAsync(transform, 0, endOffset);
+    }
+
+    /// <summary>主界面内容从屏幕外（startOffset）滑入到 0，与主色块同步。</summary>
+    private async Task RunContentSlideInAsync(TimeSpan begin, double startOffset)
+    {
+        ContentSlideTransform.Y = startOffset;
+        if (begin > TimeSpan.Zero)
+        {
+            await Task.Delay(begin);
+        }
+        await EaseTransformAsync(ContentSlideTransform, startOffset, 0);
+    }
+
+    /// <summary>主界面内容从 0 滑出到屏幕外（endOffset），与主色块同步。</summary>
+    private async Task RunContentSlideOutAsync(TimeSpan begin, double endOffset)
+    {
+        ContentSlideTransform.Y = 0;
+        if (begin > TimeSpan.Zero)
+        {
+            await Task.Delay(begin);
+        }
+        await EaseTransformAsync(ContentSlideTransform, 0, endOffset);
+    }
+
+    private static async Task EaseTransformAsync(TranslateTransform transform, double from, double to)
+    {
+        var stopwatch = Stopwatch.StartNew();
+        var total = EntranceDuration.TotalMilliseconds;
+        while (stopwatch.ElapsedMilliseconds < total)
+        {
+            var t = Math.Min(stopwatch.ElapsedMilliseconds / total, 1.0);
+            // easeInOutCubic：非线性缓入缓出。
+            var eased = t < 0.5 ? 4 * t * t * t : 1 - Math.Pow(-2 * t + 2, 3) / 2;
+            transform.Y = from + (to - from) * eased;
+            await Task.Delay(16);
+        }
+        transform.Y = to;
+    }
+
+    #endregion
 
     private void LayoutContainerGrid_OnSizeChanged(object? sender, SizeChangedEventArgs e)
     {
@@ -601,16 +913,39 @@ public partial class MainWindow : Window, ITopmostEffectPlayer
     #endregion
 
     #region Input Handling
+    private bool _isPointerOverMainWindow;
+
     private void UpdateMouseStatus()
     {
         try
         {
             var ptr = PlatformServices.WindowPlatformService.GetMousePos();
+            _isPointerOverMainWindow = IsPointerOverWindowRect(ptr);
             MousePosChanged?.Invoke(this, new MousePosChangedEventArgs(ptr));
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "无法更新鼠标状态。");
+        }
+    }
+
+    /// <summary>
+    /// 判断指针是否落在主界面窗口范围内（物理像素坐标）。
+    /// </summary>
+    private bool IsPointerOverWindowRect(Point ptr)
+    {
+        try
+        {
+            GetCurrentDpi(out var dpiX, out var dpiY);
+            var origin = Avalonia.VisualExtensions.PointToScreen(this, new Point(0, 0));
+            return ptr.X >= origin.X && ptr.Y >= origin.Y &&
+                   ptr.X <= origin.X + Bounds.Width * dpiX &&
+                   ptr.Y <= origin.Y + Bounds.Height * dpiY;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogDebug(ex, "无法获取主界面窗口范围");
+            return false;
         }
     }
 
@@ -740,29 +1075,6 @@ public partial class MainWindow : Window, ITopmostEffectPlayer
         UpdateWindowFeatures();
         UpdateWindowLayer();
 
-        var primary = (Color?)Colors.DodgerBlue;
-        switch (ViewModel.Settings.ColorSource)
-        {
-            case 0: //custom
-                primary = ViewModel.Settings.PrimaryColor;
-                break;
-            case 1: // 壁纸主题色
-            case 3: // 屏幕主题色
-                primary = ViewModel.Settings.SelectedPlatte;
-                break;
-            case 2:
-                try
-                {
-                    primary = null;
-                }
-                catch (Exception ex)
-                {
-                    Logger.LogError(ex, "获取系统主题色失败。");
-                }
-                break;
-        }
-        ThemeService.SetTheme(ViewModel.Settings.Theme, primary);
-
         if (ResourceLoaderBorder != null)
         {
             ResourceLoaderBorder.Resources[nameof(SettingsService.Settings.MainWindowSecondaryFontSize)] =
@@ -773,8 +1085,8 @@ public partial class MainWindow : Window, ITopmostEffectPlayer
                 SettingsService.Settings.MainWindowEmphasizedFontSize;
             ResourceLoaderBorder.Resources[nameof(SettingsService.Settings.MainWindowLargeFontSize)] =
                 SettingsService.Settings.MainWindowLargeFontSize;
-            ControlColorHelper.SetControlForegroundColor(ResourceLoaderBorder, ViewModel.Settings.CustomForegroundColor,
-                ViewModel.Settings.IsCustomForegroundColorEnabled);
+            ControlColorHelper.SetControlForegroundColor(ResourceLoaderBorder, ViewModel.Settings.MainWindowFontColor,
+                true);
         }
 
         App._isCriticalSafeModeEnabled = ViewModel.Settings.IsCriticalSafeMode;
@@ -790,10 +1102,6 @@ public partial class MainWindow : Window, ITopmostEffectPlayer
     
     private void ReCheckTopmostState()
     {
-        if (ViewModel.IsWindowMode || ViewModel.IsEditMode)
-        {
-            return;
-        }
         var handle = TryGetPlatformHandle()?.Handle ?? nint.Zero;
         if (ViewModel.IsNotificationWindowExplicitShowed || ViewModel.Settings.WindowLayer == 1)
         {
@@ -817,7 +1125,7 @@ public partial class MainWindow : Window, ITopmostEffectPlayer
         {
             return;
         }
-        if (ViewModel.IsNotificationWindowExplicitShowed || ViewModel.IsEditMode)
+        if (ViewModel.IsNotificationWindowExplicitShowed)
         {
             //SetWindowPos(hWnd, NativeWindowHelper.HWND_TOPMOST, 0, 0, 0, 0,
             //    SET_WINDOW_POS_FLAGS.SWP_NOSIZE | SET_WINDOW_POS_FLAGS.SWP_NOMOVE | SET_WINDOW_POS_FLAGS.SWP_NOACTIVATE);
@@ -831,39 +1139,26 @@ public partial class MainWindow : Window, ITopmostEffectPlayer
         var isCaptureBlocked = ViewModel.Settings.IsWindowCaptureBlockingEnabled;
         var shouldUseToolWindow = ViewModel is
         {
-            IsEditMode: false,
-            IsWindowMode: false,
             Settings.IsScreenRecordingModeEnabled: false
         };
         PlatformServices.WindowPlatformService.SetWindowFeature(this, WindowFeatures.ToolWindow, shouldUseToolWindow);
-        PlatformServices.WindowPlatformService.SetWindowFeature(this, WindowFeatures.Transparent, !ViewModel.IsEditMode);
+        PlatformServices.WindowPlatformService.SetWindowFeature(this, WindowFeatures.Transparent, true);
         PlatformServices.WindowPlatformService.SetWindowFeature(this, WindowFeatures.Private, isCaptureBlocked);
     }
 
     private void UpdateWindowLayer()
     {
-        if (ViewModel.IsWindowMode)
-        {
-            Topmost = false;
-            PlatformServices.WindowPlatformService.SetWindowFeature(this, WindowFeatures.Topmost, false);
-            PlatformServices.WindowPlatformService.SetWindowFeature(this, WindowFeatures.Bottommost, false);
-            PlatformServices.WindowPlatformService.SetWindowFeature(this, WindowFeatures.SkipManagement, false);
-            return;
-        }
         switch (ViewModel.Settings.WindowLayer)
         {
             case 0: // bottom
-                Topmost = ViewModel.IsNotificationWindowExplicitShowed || ViewModel.IsEditMode;
+                Topmost = ViewModel.IsNotificationWindowExplicitShowed;
                 break;
             case 1:
                 Topmost = true;
                 break;
         }
 
-        // 在 Linux 上 SkipManagement 会触发 unmap/map（override_redirect 切换），
-        // 编辑模式切换“自由窗口 -> 全屏”时会出现关闭动画甚至不显示。
-        // 编辑模式下不启用 SkipManagement，避免触发这条路径。
-        var shouldSkipManagement = Topmost && !ViewModel.IsEditMode;
+        var shouldSkipManagement = Topmost;
         PlatformServices.WindowPlatformService.SetWindowFeature(this, WindowFeatures.SkipManagement, shouldSkipManagement);
         if (Topmost)
         {
@@ -884,25 +1179,20 @@ public partial class MainWindow : Window, ITopmostEffectPlayer
         var screen = GetSelectedScreenSafe();
         if (screen == null)
             return;
-        double offsetAreaTop = ViewModel.Settings.IsIgnoreWorkAreaEnabled ? screen.Bounds.Y : screen.WorkingArea.Y;
-        double offsetAreaBottom = ViewModel.Settings.IsIgnoreWorkAreaEnabled ? screen.Bounds.Bottom : screen.WorkingArea.Bottom;
+        double offsetAreaTop = screen.Bounds.Y;
+        double offsetAreaBottom = screen.Bounds.Bottom;
+        Width = screen.Bounds.Width / dpiX;
         var aw = Bounds.Width * dpiX;
         var ah = Bounds.Height * dpiY;
-        var c = (double)(screen.WorkingArea.X + screen.WorkingArea.Right) / 2;
         var ox = ViewModel.Settings.WindowDockingOffsetX;
         var oy = ViewModel.Settings.WindowDockingOffsetY;
-        Width = screen.WorkingArea.Width / dpiX;
         //Height = GridRoot.ActualHeight * scale;
         
         var dockingTop = ViewModel.Settings.WindowDockingLocation is 0 or 1 or 2;
-        var verticalSafeAreaPx = XamlThemeService.ActualVerticalSafeAreaPx;
-        if (TutorialService.IsTutorialRunning && TutorialService.AttachedToplevel == this)
-        {
-            verticalSafeAreaPx = Math.Max(verticalSafeAreaPx, 150);
-        }
+        var verticalSafeAreaPx = 0.0;
         var safeT = Math.Max(dockingTop ? Math.Min(verticalSafeAreaPx, oy) : verticalSafeAreaPx, 0) * scale;
         var safeB = Math.Max(dockingTop ? verticalSafeAreaPx : Math.Min(verticalSafeAreaPx, -oy), 0) * scale;
-        var x = screen.WorkingArea.X + ox;
+        var x = screen.Bounds.X;
         // 和 WPF 不同，Avalonia 定位窗口用的基于物理屏幕的像素坐标，而非逻辑坐标，无需 dpi 转换。
         var y = dockingTop 
             ? offsetAreaTop + oy - safeT
@@ -938,25 +1228,16 @@ public partial class MainWindow : Window, ITopmostEffectPlayer
         ViewModel.GridRootLeft = Width / 10 * (scale - 1);
         ViewModel.GridRootTop = Height / 10 * (scale - 1);
 
-        if (ViewModel.IsWindowMode)
-        {
-            ViewModel.ActualClientBound = new Rect(0, 0, Width, Height);
-            LayoutContainerGrid.Width = Width;
-            LayoutContainerGrid.Height = Height;
-            return;
-        }
-
         WindowState = WindowState.Normal;
         var screen = GetSelectedScreenSafe();
         if (screen == null)
             return;
-        var clientRect = ViewModel.Settings.IsIgnoreWorkAreaEnabled ? screen.Bounds : screen.WorkingArea;
-        var c = (double)(screen.WorkingArea.X + screen.WorkingArea.Right) / 2;
+        var clientRect = screen.Bounds;
         var ox = ViewModel.Settings.WindowDockingOffsetX / dpiX;
         var oy = ViewModel.Settings.WindowDockingOffsetY / dpiY;
         var fullscreen = ViewModel.IsForegroundFullscreen;
         var bounds = fullscreen ? screen.Bounds : clientRect;
-        var relativeX = clientRect.X - screen.Bounds.X;
+        var relativeX = 0;
         var relativeY = clientRect.Y - screen.Bounds.Y;
         var width = bounds.Width;
         var height = bounds.Height;
@@ -979,41 +1260,9 @@ public partial class MainWindow : Window, ITopmostEffectPlayer
         }
     }
 
-    private void ApplyWindowedEditModeBounds()
-    {
-        GetCurrentDpi(out var dpiX, out var dpiY);
-
-        var screen = GetSelectedScreenSafe() ?? Screens.ScreenFromWindow(this);
-        if (screen == null)
-        {
-            return;
-        }
-
-        var bounds = screen.WorkingArea;
-        var width = Math.Max(bounds.Width - (WindowedEditModeScreenMargin * 2), 1) / dpiX;
-        var height = Math.Max(bounds.Height - (WindowedEditModeScreenMargin * 2), 1) / dpiY;
-
-        WindowState = WindowState.Normal;
-        Position = new PixelPoint(
-            bounds.X + WindowedEditModeScreenMargin,
-            bounds.Y + WindowedEditModeScreenMargin);
-        Width = width;
-        Height = height;
-        // ViewModel.ActualClientBound = new Rect(0, 0, width, height);
-        LayoutContainerGrid.Width = width;
-        LayoutContainerGrid.Height = height;
-    }
-    
     private void UpdateWindowPos(bool updateEffectWindow=false)
     {
-        if (ViewModel.IsEditMode)
-        {
-            NewWindowPosUpdateImpl();
-        }
-        else
-        {
-            OldWindowPosUpdateImpl(updateEffectWindow);
-        }
+        OldWindowPosUpdateImpl(updateEffectWindow);
     }
     
     public void GetCurrentDpi(out double dpiX, out double dpiY, Visual? visual=null)
@@ -1138,17 +1387,6 @@ public partial class MainWindow : Window, ITopmostEffectPlayer
         App.GetService<SettingsWindowNew>().Open("about");
     }
 
-    private void MenuItemDebugWelcomeWindow_OnClick(object sender, RoutedEventArgs e)
-    {
-        // var ww = new WelcomeWindow();
-        // ww.ShowDialog();
-    }
-
-    private void MenuItemDebugWelcomeWindow2_OnClick(object sender, EventArgs e)
-    {
-        ViewModel.Settings.IsWelcomeWindowShowed = false;
-    }
-
     private void MenuItemHelps_OnClick(object sender, EventArgs e)
     {
         UriNavigationService.Navigate(new Uri("https://docs.classisland.tech/app/"));
@@ -1240,38 +1478,61 @@ public partial class MainWindow : Window, ITopmostEffectPlayer
         IAppHost.GetService<DevPortalWindow>().Show();
     }
     
-    private void NativeMenuItemDebugOpenWelcomeWindow_OnClick(object? sender, EventArgs e)
-    {
-        IAppHost.GetService<WelcomeWindow>().Show();
-    }
-
-    private void NativeMenuItemDebugOpenWelcomeWindowFull_OnClick(object? sender, EventArgs e)
-    {
-        ViewModel.Settings.IsWelcomeWindowShowed = false;
-        AppBase.Current.Restart();
-    }
-    
-    private void NativeMenuItemOpenTutorialEditor_OnClick(object? sender, EventArgs e)
-    {
-        IAppHost.GetService<TutorialEditorWindow>().Show();
-    }
-
     private void NativeMenuItemDebugOpenScreenshotWindow_OnClick(object? sender, EventArgs e)
     {
         IAppHost.GetService<ScreenshotHelperWindow>().Show();
     }
     
-    private void NativeMenuItemTutorials_OnClick(object? sender, EventArgs e)
-    {
-        IAppHost.GetService<TutorialCenterWindow>().Open();
-    }
     #endregion
 
     #region Gateways
-    
+
+    private void ButtonOpenProfileTab_OnClick(object? sender, RoutedEventArgs e)
+    {
+        ViewModel.IsProfileTabOpen = true;
+    }
+
+    private void ButtonOpenMainTab_OnClick(object? sender, RoutedEventArgs e)
+    {
+        ViewModel.IsProfileTabOpen = false;
+    }
+
+    private void UpdateProfileTabWindowState()
+    {
+        if (ViewModel.IsProfileTabOpen)
+        {
+            var screen = GetSelectedScreenSafe();
+            GetCurrentDpi(out var dpiX, out var dpiY);
+            SizeToContent = SizeToContent.Manual;
+            if (screen != null)
+            {
+                Width = screen.Bounds.Width / dpiX;
+                Height = screen.Bounds.Height / dpiY;
+                Position = new PixelPoint(screen.Bounds.X, screen.Bounds.Y);
+            }
+            PlatformServices.WindowPlatformService.SetWindowFeature(this, WindowFeatures.Bottommost, false);
+            PlatformServices.WindowPlatformService.SetWindowFeature(this, WindowFeatures.Transparent, false);
+            PlatformServices.WindowPlatformService.SetWindowFeature(this, WindowFeatures.ToolWindow, false);
+            PlatformServices.WindowPlatformService.SetWindowFeature(this, WindowFeatures.Topmost, true);
+            Activate();
+        }
+        else
+        {
+            SizeToContent = SizeToContent.Height;
+            PlatformServices.WindowPlatformService.SetWindowFeature(this, WindowFeatures.Topmost, false);
+            UpdateWindowLayer();
+            UpdateWindowPos();
+        }
+    }
+
     public void OpenProfileSettingsWindow(Uri? uri = null)
     {
+        if (ProfileTabContentHost.Content == null)
+        {
+            ProfileTabContentHost.Content = App.GetService<ProfileSettingsWindow>();
+        }
         App.GetService<ProfileSettingsWindow>().Open(uri);
+        ViewModel.IsProfileTabOpen = true;
     }
 
     private async void OpenClassSwapWindow()
@@ -1349,68 +1610,6 @@ public partial class MainWindow : Window, ITopmostEffectPlayer
             .Any(x => x.AssociatedComponentInfo.IsComponentContainer);
     }
 
-    private void NativeMenuItemEnterEditMode_OnClick(object? sender, EventArgs e)
-    {
-        EnterEditMode();
-    }
-
-    private async void EnterEditMode()
-    {
-        if (ViewModel.IsEditMode || !await ManagementService.AuthorizeByLevel(ManagementService.CredentialConfig.EditSettingsAuthorizeLevel))
-        {
-            return;
-        }
-
-        ViewModel.IsEditMode = true;
-        TutorialService.PushToNextSentenceByTag("classisland.mainwindow.editMode.enter");
-        if (ManagementService.Policy.DisableSettingsEditing)
-        {
-            return;
-        }
-        TutorialService.BeginNotCompletedTutorials(
-            "classisland.getStarted.componentsEditing/introduction",
-            "classisland.getStarted.componentsEditing/addComponent");
-        if (HasComponentWithSettings())
-        {
-            TutorialService.BeginNotCompletedTutorials(
-                "classisland.getStarted.componentsEditing/componentSettings");
-        }
-        if (HasContainerComponent())
-        {
-            TutorialService.BeginNotCompletedTutorials(
-                "classisland.getStarted.componentsEditing/containerComponent");
-        }
-        TutorialService.BeginNotCompletedTutorials("classisland.getStarted.componentsEditing/mainWindowLine");
-    }
-
-    private void ButtonExitEditMode_OnClick(object? sender, RoutedEventArgs e)
-    {
-        ExitEditMode();
-    }
-
-    private void ExitEditMode()
-    {
-        if (ViewModel.EditModeView != null)
-        {
-            ViewModel.EditModeView.ViewModel.MainDrawerState = VerticalDrawerOpenState.Closed;
-            ViewModel.EditModeView.ViewModel.SecondaryDrawerState = VerticalDrawerOpenState.Closed;
-        }
-        ViewModel.IsEditMode = false;
-        ViewModel.EditModeTutorialPhase = -1;
-        MyWindow.GetState(this)?.AppToastAdorner?.Messages.Clear();
-        ComponentsService.SaveConfig();
-        TutorialService.PushToNextSentenceByTag("classisland.mainwindow.editMode.exit");
-    }
-
-    private void ButtonOpenComponentsLib_OnClick(object? sender, RoutedEventArgs e)
-    {
-        ViewModel.EditModeView?.OpenComponentsLibDrawer();
-    }
-
-    private void ButtonOpenAppearanceSettings_OnClick(object? sender, RoutedEventArgs e)
-    {
-        ViewModel.EditModeView?.OpenAppearanceSettingsDrawer();
-    }
     private void ListBoxMainWindowLineSettings_OnAttachedToVisualTree(object? sender, VisualTreeAttachmentEventArgs e)
     {
         if (sender is not EditableComponentsListBox { Tag: MainWindowLineSettings settings } listBox)
@@ -1449,48 +1648,9 @@ public partial class MainWindow : Window, ITopmostEffectPlayer
         }
     }
     
-    private void ListBoxContainerComponent_OnAttachedToVisualTree(object? sender, VisualTreeAttachmentEventArgs e)
-    {
-        if (sender is not EditableComponentsListBox { Tag: EditModeContainerComponentInfo settings } listBox)
-        {
-            return;
-        }
-
-        if (!ViewModel.ComponentsListBoxCache.Contains(listBox))
-        {
-            ViewModel.ComponentsListBoxCache.Add(listBox);
-            if (ViewModel.SelectedComponentSettings != null && settings.Settings.Children?.Contains(ViewModel.SelectedComponentSettings) == true)
-            {
-                listBox.SelectedItem = ViewModel.SelectedComponentSettings;
-            }
-        }
-        ViewModel.ContainerComponentListBoxCache[settings] = listBox;
-        ViewModel.ContainerComponentListBoxCacheReversed[listBox] = settings;
-    }
-
-    private void ListBoxContainerComponent_OnDetachedFromVisualTree(object? sender, VisualTreeAttachmentEventArgs e)
-    {
-        if (sender is not EditableComponentsListBox listBox)
-        {
-            return;
-        }
-
-        var settings = ViewModel.ContainerComponentListBoxCacheReversed.GetValueOrDefault(listBox);
-        if (settings != null)
-        {
-            ViewModel.ContainerComponentListBoxCache.Remove(settings);
-        }
-        ViewModel.ContainerComponentListBoxCacheReversed.Remove(listBox);
-        while (ViewModel.ComponentsListBoxCache.Contains(listBox))
-        {
-            ViewModel.ComponentsListBoxCache.Remove(listBox);
-        }
-    }
-    
     private void SelectorComponents_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (!ViewModel.IsEditMode 
-            || e.AddedItems.Count <= 0 || e.AddedItems[0] is not ComponentSettings settings 
+        if (e.AddedItems.Count <= 0 || e.AddedItems[0] is not ComponentSettings settings 
             || sender is not EditableComponentsListBox { ItemsSource: IList<ComponentSettings> list } 
             || !list.Contains(settings))
         {
@@ -1502,22 +1662,6 @@ public partial class MainWindow : Window, ITopmostEffectPlayer
             listBox.SelectedItem = null;
         }
         ViewModel.SelectedComponentSettings = settings;
-        Dispatcher.UIThread.Post(() =>
-        {
-            TutorialService.PushToNextSentenceByTag("classisland.mainwindow.editMode.selection.changed");
-        });
-    }
-
-    private void MainWindowEditSurface_OnPointerPressed(object? sender, PointerPressedEventArgs e)
-    {
-        if (!ViewModel.IsEditMode
-            || e.Handled
-            || e.GetCurrentPoint(this).Properties.IsLeftButtonPressed == false
-            || !Equals(e.Source, ZoomBorder))
-        {
-            return;
-        }
-        ClearSelectedComponent();
     }
 
     private void ClearSelectedComponent()
@@ -1528,44 +1672,13 @@ public partial class MainWindow : Window, ITopmostEffectPlayer
         }
 
         ViewModel.SelectedComponentSettings = null;
-        if (ViewModel.EditModeView != null && ViewModel.EditModeView.ViewModel.MainDrawerContent == ViewModel.EditModeView.FindResource("ComponentSettingsDrawer"))
-        {
-            ViewModel.EditModeView.ViewModel.MainDrawerState = VerticalDrawerOpenState.Closed;
-        }
     }
 
-    [RelayCommand]
-    public void ShowComponentSettings(ComponentSettings? component)
-    {
-        ViewModel.EditModeView?.ShowComponentSettings();
-    }
-
-    [RelayCommand]
-    public void CloseContainerComponent(EditModeContainerComponentInfo? info)
-    {
-        ViewModel.EditModeView?.CloseContainerComponent(info);
-    }
-    
-    private void EditableComponentsListBox_OnRequestOpenChildComponents(object? sender, EditableComponentsListBoxEventArgs e)
-    {
-        ViewModel.EditModeView?.OpenChildComponents(e.Settings, e.ComponentStack, GetContainerComponentEditContainerInitPos(e.ItemPosition));
-    }
-    
     private void EditableComponentsListBox_OnComponentDeleted(object? sender, EditableComponentsListBoxEventArgs e)
     {
         ClearSelectedComponent();
     }
 
-    public Point GetContainerComponentEditContainerInitPos(Point pos)
-    {
-        var transform = this.TransformToVisual(ContainerComponentsEditHost);
-        var pointInCanvas = transform?.Transform(pos);
-        if (pointInCanvas == null) 
-            return new Point();
-        var newPoint = new Point(pointInCanvas.Value.X, pointInCanvas.Value.Y + 48);
-        return newPoint;
-    }
-    
     private void ToggleButtonIsMainLine_OnIsCheckedChanged(object? sender, RoutedEventArgs e)
     {
         if (sender is not ToggleButton button)
@@ -1611,42 +1724,391 @@ public partial class MainWindow : Window, ITopmostEffectPlayer
         ComponentsService.CurrentComponents.Lines.Remove(settings);
     }
 
-    [RelayCommand]
-    private void OpenMainWindowLineSettings(MainWindowLineSettings? settings)
+    #endregion
+
+    #region 快速预览今日时间表与课间内容轮换
+
+    /// <summary>预览时每个时间点（上课/课间）播放的时长。</summary>
+    private static readonly TimeSpan TodaySchedulePreviewItemDuration = TimeSpan.FromSeconds(10);
+
+    private bool _isTodaySchedulePreviewing;
+    private CancellationTokenSource? _todaySchedulePreviewCts;
+
+    /// <summary>预览期间的课间轮换参数：轮换周期与「临近上课恢复原显示」阈值按课间真实时长等比缩小。</summary>
+    private TimeSpan? _previewRotationPeriod;
+    private TimeSpan? _previewNearThreshold;
+
+    /// <summary>预览分段：模拟时间从 Start 匀速推进到 End，耗时 DurationMs；Item 为对应时间点（余量/空档段为 null）。</summary>
+    private sealed class TodaySchedulePreviewSegment
     {
-        if (settings != null) ViewModel.EditModeView?.OpenMainWindowLineSettings(settings);
-    }
-    
-    private void ButtonNewMainWindowLine_OnClick(object? sender, RoutedEventArgs e)
-    {
-        ComponentsService.CurrentComponents.Lines.Add(new MainWindowLineSettings());
-        TutorialService.PushToNextSentenceByTag("classisland.mainwindow.editMode.mainWindowLine.create");
-    }
-    
-    private void ButtonManageComponentLayouts_OnClick(object? sender, RoutedEventArgs e)
-    {
-        ViewModel.EditModeView?.OpenComponentLayoutsManagerDrawer();
-    }
-    
-    private void EditableComponentsListBox_OnRequestAddComponent(object? sender, RequestAddComponentEventArgs e)
-    {
-        ViewModel.EditModeView?.OpenComponentsLibDrawer(e.ComponentList);
+        public TimeSpan Start;
+        public TimeSpan End;
+        public double DurationMs;
+        public double BeginMs;
+        public TimeLayoutItem? Item;
     }
 
-    [RelayCommand]
-    private void SetEditModeTutorialPhase(int phase)
+    /// <summary>是否正在快进预览今日时间表。</summary>
+    public bool IsTodaySchedulePreviewing => _isTodaySchedulePreviewing;
+
+    /// <summary>
+    /// 快速预览今日时间表：每个时间点（上课/课间）各播放 10 秒，逐段推进模拟时间，
+    /// 让主界面依次播放一天内所有上课、课间与放学状态及其切换动画，用于快速检查。
+    /// </summary>
+    /// <param name="progress">进度回调，包含 0~1 进度与状态文本。</param>
+    /// <param name="cancellationToken">用于提前停止预览。</param>
+    /// <returns>正常完成返回 null；无法开始或中途失败时返回提示文本。</returns>
+    public async Task<string?> PlayTodaySchedulePreviewAsync(
+        IProgress<TodaySchedulePreviewProgress>? progress = null,
+        CancellationToken cancellationToken = default)
     {
-        ViewModel.EditModeTutorialPhase = phase;
+        if (_isTodaySchedulePreviewing || _presenceBusy)
+        {
+            return "已有动画正在播放，请稍后再试。";
+        }
+
+        var settings = SettingsService.Settings;
+        var now = ExactTimeService.GetCurrentLocalDateTime();
+        var today = now.Date;
+        var classPlan = LessonsService.CurrentClassPlan ?? LessonsService.GetClassPlanByDate(today);
+        var items = classPlan?.ValidTimeLayoutItems is { } validItems
+            ? validItems.Where(i => i.TimeType is 0 or 1).OrderBy(i => i.StartTime).ToList()
+            : new List<TimeLayoutItem>();
+        if (items.Count == 0)
+        {
+            return "今天没有可预览的时间表内容（未找到课程或课间时间点）。";
+        }
+
+        // 构建分段：上课前余量 3 秒 →（时间点间空档 2 秒）→ 每个时间点 10 秒 → 放学后余量 3 秒。
+        // 保证模拟时间不跨天，避免课表被重新加载。
+        var firstStart = items.First().StartTime;
+        var lastEnd = items.Max(i => i.EndTime);
+        if (lastEnd <= firstStart)
+        {
+            lastEnd = firstStart + TimeSpan.FromHours(1);
+        }
+        var from = firstStart - TimeSpan.FromSeconds(3);
+        if (from < TimeSpan.Zero)
+        {
+            from = TimeSpan.Zero;
+        }
+        var to = lastEnd + TimeSpan.FromSeconds(3);
+        var dayEnd = TimeSpan.FromDays(1) - TimeSpan.FromSeconds(1);
+        if (to > dayEnd)
+        {
+            to = dayEnd;
+        }
+
+        var segments = new List<TodaySchedulePreviewSegment>();
+        var cursor = from;
+        double cumMs = 0;
+        void AddSegment(TimeSpan start, TimeSpan end, double durationMs, TimeLayoutItem? item)
+        {
+            if (durationMs <= 0)
+            {
+                return;
+            }
+            segments.Add(new TodaySchedulePreviewSegment
+            {
+                Start = start,
+                End = end,
+                DurationMs = durationMs,
+                BeginMs = cumMs,
+                Item = item
+            });
+            cumMs += durationMs;
+        }
+
+        AddSegment(from, firstStart, 3000, null); // 上课前
+        foreach (var item in items)
+        {
+            var start = item.StartTime > cursor ? item.StartTime : cursor;
+            var end = item.EndTime > start ? item.EndTime : start + TimeSpan.FromSeconds(1);
+            if (start > cursor)
+            {
+                AddSegment(cursor, start, 2000, null); // 时间点之间的空档
+            }
+            AddSegment(start, end, TodaySchedulePreviewItemDuration.TotalMilliseconds, item);
+            cursor = end;
+        }
+        if (to > cursor)
+        {
+            AddSegment(cursor, to, 3000, null); // 放学后
+        }
+        var totalMs = Math.Max(cumMs, 1);
+
+        // 记录并稍后完整还原调试时间与通知设置。
+        var originalOffset = settings.DebugTimeOffsetSeconds;
+        var originalSpeed = settings.DebugTimeSpeed;
+        var originalNotificationEnabled = settings.IsNotificationEnabled;
+        // now 已包含 originalOffset；去掉它即为未加调试偏移的真实时间基准。
+        var realBase = now - TimeSpan.FromSeconds(originalOffset);
+
+        _isTodaySchedulePreviewing = true;
+        _todaySchedulePreviewCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        var ct = _todaySchedulePreviewCts.Token;
+
+        try
+        {
+            settings.DebugTimeSpeed = 0;
+            settings.IsNotificationEnabled = false;
+
+            // 先把模拟时间推进到起始点，等课程服务按新时间重算状态后同步一次显示状态，
+            // 之后的状态切换（上课收起/课间入场）随预览自动播放，便于检查动画。
+            settings.DebugTimeOffsetSeconds = (today + from - realBase).TotalSeconds;
+            await Task.Delay(200, ct);
+            WelcomeOverlay.IsVisible = false;
+            await ApplyPresenceAsync();
+
+            var stopwatch = Stopwatch.StartNew();
+            while (true)
+            {
+                if (ct.IsCancellationRequested)
+                {
+                    progress?.Report(new TodaySchedulePreviewProgress(1.0, "已停止预览，已恢复当前时间。"));
+                    break;
+                }
+
+                var elapsedMs = stopwatch.ElapsedMilliseconds;
+                if (elapsedMs >= totalMs)
+                {
+                    progress?.Report(new TodaySchedulePreviewProgress(1.0, "预览完成，已恢复当前时间。"));
+                    break;
+                }
+
+                var segment = segments.Last(s => elapsedMs >= s.BeginMs);
+                var localP = segment.DurationMs <= 0
+                    ? 1.0
+                    : Math.Min((elapsedMs - segment.BeginMs) / segment.DurationMs, 1.0);
+                var simulated = segment.Start +
+                    TimeSpan.FromTicks((long)((segment.End - segment.Start).Ticks * localP));
+                var target = today + simulated;
+                // 减去已流逝的真实时间，抵消 GetCurrentLocalDateTime() 中系统时间的自然增长。
+                settings.DebugTimeOffsetSeconds = (target - realBase).TotalSeconds - elapsedMs / 1000.0;
+
+                // 预览中的课间轮换参数：轮换周期取课间预览时长的 1/3（三个视图各显示一次），
+                // 最后 1/6 恢复原显示（对应真实使用中临近上课最后几十秒）。
+                if (segment.Item is { TimeType: 1 } && segment.End > segment.Start)
+                {
+                    _previewRotationPeriod = TimeSpan.FromTicks((segment.End - segment.Start).Ticks / 3);
+                    _previewNearThreshold = TimeSpan.FromTicks((segment.End - segment.Start).Ticks / 6);
+                }
+                else
+                {
+                    _previewRotationPeriod = null;
+                    _previewNearThreshold = null;
+                }
+
+                var p = Math.Min(elapsedMs / totalMs, 1.0);
+                progress?.Report(new TodaySchedulePreviewProgress(p,
+                    BuildTodaySchedulePreviewText(p, simulated, items, segment.Item)));
+
+                try
+                {
+                    await Task.Delay(33, ct);
+                }
+                catch (TaskCanceledException)
+                {
+                    progress?.Report(new TodaySchedulePreviewProgress(1.0, "已停止预览，已恢复当前时间。"));
+                    break;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "快进预览今日时间表失败");
+            return $"预览失败：{ex.Message}";
+        }
+        finally
+        {
+            settings.DebugTimeOffsetSeconds = originalOffset;
+            settings.DebugTimeSpeed = originalSpeed;
+            settings.IsNotificationEnabled = originalNotificationEnabled;
+            _isTodaySchedulePreviewing = false;
+            _previewRotationPeriod = null;
+            _previewNearThreshold = null;
+            _todaySchedulePreviewCts?.Dispose();
+            _todaySchedulePreviewCts = null;
+            // 等课程服务按恢复后的真实时间重算状态，再决定是否收起主界面。
+            try
+            {
+                await Task.Delay(150);
+                await ApplyPresenceAsync();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "恢复主界面显示状态失败");
+            }
+        }
+        return null;
     }
-    
-    private void ButtonShowTutorial_OnClick(object? sender, RoutedEventArgs e)
+
+    /// <summary>提前停止今日时间表快进预览。</summary>
+    public void StopTodaySchedulePreview()
     {
-        ViewModel.EditModeTutorialPhase = 0;
+        try
+        {
+            _todaySchedulePreviewCts?.Cancel();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "停止预览失败");
+        }
     }
-    
-    private void TeachingTipEditModeP4_OnCloseButtonClick(TeachingTip sender, EventArgs args)
+
+    private string BuildTodaySchedulePreviewText(double percent, TimeSpan simulated,
+        IReadOnlyList<TimeLayoutItem> items, TimeLayoutItem? currentItem)
     {
-        ViewModel.Settings.HasEditModeTutorialShown = true;
+        var index = -1;
+        if (currentItem != null)
+        {
+            for (var i = 0; i < items.Count; i++)
+            {
+                if (ReferenceEquals(items[i], currentItem))
+                {
+                    index = i;
+                    break;
+                }
+            }
+        }
+        var pointText = index >= 0 ? $" · 第 {index + 1}/{items.Count} 个时间点" : "";
+        var subject = LessonsService.CurrentSubject?.Name;
+        var stateText = LessonsService.CurrentState switch
+        {
+            TimeState.OnClass => string.IsNullOrWhiteSpace(subject) ? "上课" : $"上课 · {subject}",
+            TimeState.Breaking => string.IsNullOrWhiteSpace(subject) ? "课间" : $"课间 · {subject}",
+            TimeState.AfterSchool => "放学后",
+            _ => "上课前 / 无课程"
+        };
+        return $"{percent * 100:0}% · 模拟时间 {simulated:hh\\:mm\\:ss} · {stateText}{pointText}";
     }
+
+    #endregion
+
+    #region 课间内容轮换（课表 → 距离上课时间 → 当前时间，临近上课恢复原显示）
+
+    private string? _lastBreakRotationCountdownText;
+    private string? _lastBreakRotationClockText;
+    private string? _lastBreakRotationDateText;
+
+    /// <summary>
+    /// 课间轮换覆盖层当前是否正在显示（供行控件的鼠标悬停虚化判定使用）。
+    /// 覆盖层显示时整块主界面都被它盖住，因此鼠标在窗口任意位置都应算作「在主界面上」。
+    /// </summary>
+    internal bool IsBreakRotationOverlayVisible =>
+        BreakRotationOverlay is { IsVisible: true } && BreakRotationOverlay.Opacity > 0.01;
+
+    /// <summary>
+    /// 课间内容轮换：课间时主界面内容每 20 秒在 课表（原显示）→ 距离上课时间 → 当前时间 之间轮换；
+    /// 距离上课只剩最后几十秒（CountdownSeconds 设置，默认 60 秒）时恢复原显示（课表）。
+    /// 快进预览期间轮换周期与阈值按课间预览时长等比缩小，便于在预览中看到完整轮换。
+    /// </summary>
+    private void UpdateBreakRotation()
+    {
+        var showOverlay = false;
+        string? countdownText = null;
+        string? clockText = null;
+        string? dateText = null;
+        try
+        {
+            if (_entranceAnimationPlayed &&
+                _isInterfacePresent &&
+                !ViewModel.IsMainWindowCollapsed &&
+                !_presenceBusy &&
+                LessonsService.CurrentState == TimeState.Breaking &&
+                LessonsService.CurrentTimeLayoutItem is { TimeType: 1 } breakItem)
+            {
+                var now = ExactTimeService.GetCurrentLocalDateTime();
+                var elapsed = now.TimeOfDay - breakItem.StartTime;
+                var remaining = LessonsService.OnClassLeftTime;
+                var threshold = _isTodaySchedulePreviewing && _previewNearThreshold.HasValue
+                    ? _previewNearThreshold.Value
+                    : TimeSpan.FromSeconds(Math.Max(SettingsService.Settings.CountdownSeconds, 1));
+                var period = _isTodaySchedulePreviewing && _previewRotationPeriod.HasValue
+                    ? _previewRotationPeriod.Value
+                    : TimeSpan.FromSeconds(20);
+                if (period > TimeSpan.Zero && elapsed >= TimeSpan.Zero && remaining > threshold)
+                {
+                    // 相位：0=课表（原显示，隐藏覆盖层）1=距离上课时间 2=当前时间。
+                    var phase = (int)(elapsed.Ticks / period.Ticks) % 3;
+                    if (phase == 1)
+                    {
+                        showOverlay = true;
+                        countdownText = $"距上课 {remaining:hh\\:mm\\:ss}";
+                        var nextSubject = LessonsService.NextClassSubject?.Name;
+                        if (!string.IsNullOrWhiteSpace(nextSubject))
+                        {
+                            countdownText += $" · 下节 {nextSubject}";
+                        }
+                    }
+                    else if (phase == 2)
+                    {
+                        showOverlay = true;
+                        clockText = now.ToString("HH:mm:ss");
+                        var week = now.DayOfWeek switch
+                        {
+                            DayOfWeek.Monday => "星期一",
+                            DayOfWeek.Tuesday => "星期二",
+                            DayOfWeek.Wednesday => "星期三",
+                            DayOfWeek.Thursday => "星期四",
+                            DayOfWeek.Friday => "星期五",
+                            DayOfWeek.Saturday => "星期六",
+                            _ => "星期日"
+                        };
+                        dateText = $"{now:yyyy年M月d日} {week}";
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "更新课间内容轮换失败");
+        }
+
+        var targetOpacity = showOverlay ? (IsMainWindowMouseInFaded() ? 0.05 : 1d) : 0d;
+        if (Math.Abs(BreakRotationOverlay.Opacity - targetOpacity) > 0.001)
+        {
+            BreakRotationOverlay.Opacity = targetOpacity;
+        }
+        SetBreakRotationViewActive(BreakRotationCountdownView, countdownText != null);
+        SetBreakRotationViewActive(BreakRotationClockView, clockText != null);
+        if (countdownText != null && countdownText != _lastBreakRotationCountdownText)
+        {
+            BreakRotationCountdownText.Text = countdownText;
+            _lastBreakRotationCountdownText = countdownText;
+        }
+        if (clockText != null && (clockText != _lastBreakRotationClockText || dateText != _lastBreakRotationDateText))
+        {
+            BreakRotationClockText.Text = clockText;
+            BreakRotationDateText.Text = dateText;
+            _lastBreakRotationClockText = clockText;
+            _lastBreakRotationDateText = dateText;
+        }
+    }
+
+    /// <summary>
+    /// 切换课间轮换视图：加 active 类触发淡入 + 上浮动画，去掉则淡出 + 下沉。
+    /// </summary>
+    private static void SetBreakRotationViewActive(Control view, bool active)
+    {
+        if (view.Classes.Contains("active") == active)
+        {
+            return;
+        }
+        view.Classes.Set("active", active);
+    }
+
+    /// <summary>
+    /// 主界面当前是否处于「鼠标悬停虚化」状态（与主界面行的判定规则一致）。
+    /// 轮换覆盖层不属于任何主界面行，需要单独跟随虚化，
+    /// 否则鼠标移到轮换出来的内容上时主界面不会变淡。
+    /// </summary>
+    private bool IsMainWindowMouseInFaded()
+    {
+        var settings = SettingsService.Settings;
+        return settings.IsMouseInFadingEnabled &&
+               (_isPointerOverMainWindow ^ settings.IsMouseInFadingReversed);
+    }
+
     #endregion
 }

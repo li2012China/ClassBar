@@ -62,7 +62,6 @@ public static class ComponentRegistryExtensions
             services.AddTransient(settings);
             info.SettingsType = settings;
         }
-        info.SourcePlugin = ComponentRegistryService.CurrentRegisteringPlugin.Value;
         ComponentRegistryService.Registered.Add(info);
         ComponentRegistryService.RegisteredSettings.Add(new ComponentSettings()
         {

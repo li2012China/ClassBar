@@ -1,0 +1,11 @@
+<controls:SettingsPageBase xmlns="https://github.com/avaloniaui"
+                           xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                           xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                           xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                           xmlns:controls="clr-namespace:ClassIsland.Core.Abstractions.Controls;assembly=ClassIsland.Core"
+                           xmlns:views="clr-namespace:ClassIsland.Views"
+                           mc:Ignorable="d"
+                           d:DesignWidth="960" d:DesignHeight="600"
+                           x:Class="ClassIsland.Views.SettingPages.ProfileSettingsPage">
+    <views:ProfileSettingsWindow x:Name="ProfileView" />
+</controls:SettingsPageBase>

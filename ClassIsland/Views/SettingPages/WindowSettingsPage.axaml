@@ -33,25 +33,13 @@
                         Height="220">
                         <Grid RowDefinitions="*,Auto">
                             <Grid Grid.Row="0" Margin="8">
-                                <RadioButton VerticalAlignment="Top" HorizontalAlignment="Left"
-                                             IsChecked="{Binding ViewModel.SettingsService.Settings.WindowDockingLocation, Converter={StaticResource IntToRadioButtonSelectionConverter}, ConverterParameter=0}" />
-                                <RadioButton VerticalAlignment="Top"
-                                             HorizontalAlignment="Center"
-                                             IsChecked="{Binding ViewModel.SettingsService.Settings.WindowDockingLocation, Converter={StaticResource IntToRadioButtonSelectionConverter}, ConverterParameter=1}" />
-                                <RadioButton VerticalAlignment="Top"
-                                             HorizontalAlignment="Right"
-                                             IsChecked="{Binding ViewModel.SettingsService.Settings.WindowDockingLocation, Converter={StaticResource IntToRadioButtonSelectionConverter}, ConverterParameter=2}" />
-
-                                <RadioButton VerticalAlignment="Bottom"
-                                             HorizontalAlignment="Left"
-                                             IsChecked="{Binding ViewModel.SettingsService.Settings.WindowDockingLocation, Converter={StaticResource IntToRadioButtonSelectionConverter}, ConverterParameter=3}" />
-                                <RadioButton VerticalAlignment="Bottom"
-                                             HorizontalAlignment="Center"
-                                             IsChecked="{Binding ViewModel.SettingsService.Settings.WindowDockingLocation, Converter={StaticResource IntToRadioButtonSelectionConverter}, ConverterParameter=4}" />
-                                <RadioButton VerticalAlignment="Bottom"
-                                             HorizontalAlignment="Right"
-                                             IsChecked="{Binding ViewModel.SettingsService.Settings.WindowDockingLocation, Converter={StaticResource IntToRadioButtonSelectionConverter}, ConverterParameter=5}" />
-                            </Grid>
+                            <RadioButton VerticalAlignment="Top"
+                                         HorizontalAlignment="Center"
+                                         IsChecked="{Binding ViewModel.SettingsService.Settings.WindowDockingLocation, Converter={StaticResource IntToRadioButtonSelectionConverter}, ConverterParameter=1}" />
+                            <RadioButton VerticalAlignment="Bottom"
+                                         HorizontalAlignment="Center"
+                                         IsChecked="{Binding ViewModel.SettingsService.Settings.WindowDockingLocation, Converter={StaticResource IntToRadioButtonSelectionConverter}, ConverterParameter=4}" />
+                        </Grid>
                             <Border  Grid.Row="1" Height="16"
                                      TextElement.Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                                       Background="#99000000"
@@ -120,7 +108,7 @@
                     </Button>
 
                     <TextBlock Margin="0 16 0 0" TextWrapping="Wrap"
-                               Text="应用会以左图的位置显示在指定的显示器上。如果指定的显示器不存在，那么应用会显示在主显示器上。" 
+                               Text="应用会以左图的位置显示在指定的显示器上（仅支持正上或正下）。窗口停靠在正下时，主界面入场/收起动画将从下向上播放。如果指定的显示器不存在，那么应用会显示在主显示器上。"
                                Classes="l-instructive"/>
                     <!--<TextBlock Text="{Binding ViewModel.SettingsService.Settings.WindowDockingLocation, Mode=OneWay}"/>-->
                 </StackPanel>

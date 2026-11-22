@@ -19,12 +19,30 @@ namespace ClassIsland.Services;
 
 public class AudioService(ILogger<AudioService> logger) : IAudioService
 {
-    private readonly AudioEngine _audioEngine = Task.Run((() => new MiniAudioEngine())).Result;
+    /// <summary>
+    /// 音频引擎惰性初始化。部分环境（如缺少 libminiaudio、无声卡、缺少系统音频库）会导致初始化失败，
+    /// 此时音频功能降级为不可用，但不能让整个应用启动崩溃。
+    /// </summary>
+    private readonly Lazy<AudioEngine?> _audioEngine = new(() =>
+    {
+        try
+        {
+            return Task.Run(() => (AudioEngine?)new MiniAudioEngine()).Result;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "初始化音频引擎失败，音频功能将不可用");
+            return null;
+        }
+    }, LazyThreadSafetyMode.ExecutionAndPublication);
+
     private ILogger<AudioService> Logger { get; } = logger;
 
     private RefCounted<AudioPlaybackDevice>? _sharedAudioPlaybackDevice;
 
     private object _audioPlaybackDeviceInitializeLock = new();
+
+    private AudioEngine? EngineOrNull => _audioEngine.Value;
 
     public AudioEngine AudioEngine
     {
@@ -35,7 +53,7 @@ public class AudioService(ILogger<AudioService> logger) : IAudioService
                 throw new InvalidOperationException(
                     "出于线程安全考虑，禁止在非 MTA 线程上调用 AudioEngine。请在 MTA 线程上调用 AudioEngine。详细请见 https://github.com/ClassIsland/ClassIsland/issues/1333#issuecomment-3505591836");
             }
-            return _audioEngine;
+            return _audioEngine.Value ?? throw new InvalidOperationException("音频引擎不可用，当前环境无法初始化音频后端。");
         }
     }
 
@@ -71,7 +89,12 @@ public class AudioService(ILogger<AudioService> logger) : IAudioService
     {
         try
         {
-            var deviceInfo = AudioEngine.PlaybackDevices.FirstOrDefault(x => x.IsDefault);
+            if (EngineOrNull is not { } engine)
+            {
+                return null;
+            }
+
+            var deviceInfo = engine.PlaybackDevices.FirstOrDefault(x => x.IsDefault);
             if (deviceInfo == default)
             {
                 Logger.LogDebug("找不到可用的音频设备");
@@ -79,7 +102,7 @@ public class AudioService(ILogger<AudioService> logger) : IAudioService
             }
 
             Logger.LogDebug("初始化音频设备 {} (Id={})", deviceInfo.Name, deviceInfo.Id);
-            var device = AudioEngine.InitializePlaybackDevice(deviceInfo, IAudioService.DefaultAudioFormat);
+            var device = engine.InitializePlaybackDevice(deviceInfo, IAudioService.DefaultAudioFormat);
             device.MasterMixer.Volume = 1.0f;
             device.Start();
             return device;
@@ -103,8 +126,13 @@ public class AudioService(ILogger<AudioService> logger) : IAudioService
         }
 
         var device = lease.Value;
-        using var player = new SoundPlayer(AudioEngine, IAudioService.DefaultAudioFormat,
-            new StreamDataProvider(AudioEngine, IAudioService.DefaultAudioFormat, audio));
+        if (EngineOrNull is not { } engine)
+        {
+            return;
+        }
+
+        using var player = new SoundPlayer(engine, IAudioService.DefaultAudioFormat,
+            new StreamDataProvider(engine, IAudioService.DefaultAudioFormat, audio));
         player.Volume = volume;
         Logger.LogDebug("开始播放音频 {}", audio.GetHashCode());
         device.MasterMixer.AddComponent(player);
@@ -137,7 +165,10 @@ public class AudioService(ILogger<AudioService> logger) : IAudioService
 
     public void Dispose()
     {
-        AudioEngine.Dispose();
+        if (_audioEngine.IsValueCreated)
+        {
+            _audioEngine.Value?.Dispose();
+        }
         GC.SuppressFinalize(this);
     }
 }

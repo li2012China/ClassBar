@@ -73,7 +73,7 @@
                 VerticalAlignment="Top"
                 Padding="2"
                 CornerRadius="4">
-                <ci:TutorialBarrier>
+                <ci:ContentBarrier>
                     <StackPanel Orientation="Horizontal" Classes="items-valign-center" Margin="4 0"
                                 Spacing="4">
                         <ci:IconText Glyph="&#xE448;" Text="添加" Classes="l-instructive" FontSize="13"
@@ -113,7 +113,7 @@
                             <ci:FluentIcon Glyph="&#xE671;"/>
                         </Button>
                     </StackPanel>
-                </ci:TutorialBarrier>
+                </ci:ContentBarrier>
             </Border>
         </Panel>
     </Grid>

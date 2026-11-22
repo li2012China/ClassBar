@@ -50,7 +50,7 @@ public class WrapPanelResizingAnimationAssist
     
     private static void HandleIsResizingAnimationEnabledChanged(Panel panel, AvaloniaPropertyChangedEventArgs args)
     {
-        if (IThemeService.AnimationLevel < 2)
+        if (AnimationAssist.AnimationLevel < 2)
         {
             return;
         }

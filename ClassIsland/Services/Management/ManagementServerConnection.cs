@@ -145,10 +145,6 @@ public class ManagementServerConnection : IManagementServerConnection
             ConfigTypes.CurrentAutomation => JsonSerializer.Serialize(IAppHost.GetService<IAutomationService>()
                 .Workflows),
             ConfigTypes.Logs => JsonSerializer.Serialize(IAppHost.GetService<AppLogService>().Logs),
-            ConfigTypes.PluginList => JsonSerializer.Serialize(IPluginService.LoadedPlugins
-                .Where(x => x.LoadStatus == PluginLoadStatus.Loaded)
-                .Select(x => x.Manifest.Id)
-                .ToList()),
             _ => throw new ArgumentOutOfRangeException()
         };
         var client = new ConfigUpload.ConfigUploadClient(Channel);

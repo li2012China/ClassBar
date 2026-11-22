@@ -23,6 +23,24 @@
     <ScrollViewer>
         <StackPanel Classes="settings-container animated-intro">
             <controls1:IconText Glyph="&#xEF27;" Text="基本" Margin="0 0 0 4" />
+            <!-- 主界面颜色（入场动画最终停留的色块与主界面背景色） -->
+            <controls2:SettingsExpander IconSource="{controls1:FluentIconSource &#xE523;}"
+                                        Header="主界面颜色"
+                                        Description="入场动画中后进入并停留的色块颜色，同时作为主界面的背景色。">
+                <controls2:SettingsExpander.Footer>
+                    <ColorPicker VerticalAlignment="Center"
+                                 Color="{Binding ViewModel.SettingsService.Settings.MainWindowCurtainColor, Mode=TwoWay}"/>
+                </controls2:SettingsExpander.Footer>
+            </controls2:SettingsExpander>
+            <!-- 主界面字体颜色 -->
+            <controls2:SettingsExpander IconSource="{controls1:FluentIconSource &#xF22A;}"
+                                        Header="主界面字体颜色"
+                                        Description="主界面上文字的颜色。">
+                <controls2:SettingsExpander.Footer>
+                    <ColorPicker VerticalAlignment="Center"
+                                 Color="{Binding ViewModel.SettingsService.Settings.MainWindowFontColor, Mode=TwoWay}"/>
+                </controls2:SettingsExpander.Footer>
+            </controls2:SettingsExpander>
             <!-- 界面缩放 -->
             <controls2:SettingsExpander IconSource="{controls1:FluentIconSource &#xF4D1;}"
                                         Header="界面缩放"
@@ -39,147 +57,6 @@
                 </controls2:SettingsExpander.Footer>
             </controls2:SettingsExpander>
             
-            <!--背景颜色-->
-            <controls2:SettingsExpander IconSource="{controls1:FluentIconSource &#xE523;}"
-                                        Header="背景颜色"
-                                        Description="主界面背景颜色，禁用时将根据应用主题自动选择颜色。">
-                <controls2:SettingsExpander.Footer>
-                    <StackPanel Orientation="Horizontal">
-                    
-                        <ColorPicker
-                            VerticalAlignment="Center"
-                            Margin="0 0 6 0"
-                            Color="{Binding ViewModel.SettingsService.Settings.BackgroundColor, Mode=TwoWay}"
-                            IsVisible="{Binding ViewModel.SettingsService.Settings.IsCustomBackgroundColorEnabled}"/>
-                        <ToggleSwitch VerticalAlignment="Center"
-                                      IsChecked="{Binding ViewModel.SettingsService.Settings.IsCustomBackgroundColorEnabled}" />
-                    </StackPanel>
-                </controls2:SettingsExpander.Footer>
-            </controls2:SettingsExpander>
-            
-            <!-- 背景不透明度 -->
-            <controls2:SettingsExpander IconSource="{controls1:FluentIconSource &#xF37D;}"
-                                        Header="背景不透明度"
-                                        Description="主界面背景的不透明度。">
-                <controls2:SettingsExpander.Footer>
-                    <Slider Width="180" Minimum="0" Maximum="1"
-                            Classes="auto-tooltip"
-                            ci:SliderDragTooltipAssist.StringFormat="F2"
-                            Value="{Binding ViewModel.SettingsService.Settings.Opacity}"
-                            TickFrequency="0.05"
-                            IsSnapToTickEnabled="True"/>
-                </controls2:SettingsExpander.Footer>
-            </controls2:SettingsExpander>
-            
-            <!-- 圆角半径 -->
-            <controls2:SettingsExpander IconSource="{controls1:FluentIconSource &#xF031;}"
-                                        Header="圆角半径"
-                                        Description="主界面圆角半径，调至最大数值时左右边缘为半圆。">
-                <controls2:SettingsExpander.Footer>
-                    <Slider Grid.Row="0" Width="180" Minimum="0" Maximum="20"
-                            Value="{Binding ViewModel.SettingsService.Settings.RadiusX}"
-                            TickFrequency="0.5"
-                            ci:SliderDragTooltipAssist.StringFormat="F1"
-                            Classes="auto-tooltip"
-                            IsSnapToTickEnabled="True"
-                            VerticalAlignment="Center"/>
-                </controls2:SettingsExpander.Footer>
-            </controls2:SettingsExpander>
-            
-            <!-- 行间隔 -->
-            <controls2:SettingsExpander IconSource="{controls1:FluentIconSource &#xE6EF;}"
-                                        Header="行间隔"
-                                        Description="主界面行间间隔。">
-                <controls2:SettingsExpander.Footer>
-                    <StackPanel Orientation="Horizontal">
-                        <Slider Width="130" Minimum="0" Maximum="150"
-                                Value="{Binding ViewModel.SettingsService.Settings.MainWindowLineVerticalMargin}"
-                                TickFrequency="5"
-                                ci:SliderDragTooltipAssist.StringFormat="F1"
-                                Classes="auto-tooltip"
-                                VerticalAlignment="Center"
-                                IsSnapToTickEnabled="True"/>
-                        <NumericUpDown
-                            Value="{Binding ViewModel.SettingsService.Settings.MainWindowLineVerticalMargin, Converter={x:Static ci:NotNaNConverter.Instance}}"
-                            Margin="6,0,0,0"
-                            Minimum="0"
-                            Width="125"/>
-                    </StackPanel>
-                </controls2:SettingsExpander.Footer>
-            </controls2:SettingsExpander>
-            
-            <!-- 分体主界面 -->
-            <controls2:SettingsExpander IconSource="{controls1:FluentIconSource &#xf023;}"
-                                        Header="分体主界面"
-                                        Description="启用后组件会分开。">
-                <controls2:SettingsExpander.Footer>
-                    <ToggleSwitch IsChecked="{Binding ViewModel.SettingsService.Settings.IsIslandSeperated}"/>
-                </controls2:SettingsExpander.Footer>
-            </controls2:SettingsExpander>
-            
-            <Separator Margin="0 12 0 4" />
-            <controls1:IconText Glyph="&#xE51E;" Text="主题" Margin="0 0 0 4" />
-            <!-- 应用主题 -->
-            <controls2:SettingsExpander IconSource="{controls1:FluentIconSource &#xE5CB;}"
-                                        Header="应用主题"
-                                        Description="控制应用的明暗主题。">
-                <controls2:SettingsExpander.Footer>
-                    <ComboBox Foreground="{DynamicResource MaterialDesignBody}"
-                              SelectedIndex="{Binding ViewModel.SettingsService.Settings.Theme}"
-                              HorizontalContentAlignment="Left">
-                        <controls1:IconText Glyph="&#xE5CB;" Text="跟随系统" />
-                        <controls1:IconText Glyph="&#xF465;" Text="明亮" />
-                        <controls1:IconText Glyph="&#xF44B;" Text="黑暗" />
-                    </ComboBox>
-                </controls2:SettingsExpander.Footer>
-            </controls2:SettingsExpander>
-            
-            <!-- 主题色来源 -->
-            <controls2:SettingsExpander IconSource="{controls1:FluentIconSource &#xEC50;}"
-                                        Header="主题色来源"
-                                        Description="控制应用选取主题色的途径。">
-                <controls2:SettingsExpander.Footer>
-                    <ComboBox Foreground="{DynamicResource MaterialDesignBody}"
-                              SelectionChanged="ButtonUpdateWallpaper_OnClick"
-                              HorizontalContentAlignment="Left"
-                              SelectedIndex="{Binding ViewModel.SettingsService.Settings.ColorSource}">
-                        <ComboBoxItem>
-                            <controls1:IconText Glyph="&#xED39;" Text="自定义" />
-                        </ComboBoxItem>
-                        <ComboBoxItem IsVisible="False" IsEnabled="False">
-                            <controls1:IconText Glyph="&#xF42D;" Text="系统壁纸" />
-                        </ComboBoxItem>
-                        <ComboBoxItem>
-                            <controls1:IconText Glyph="&#xEA1D;" Text="系统" />
-                        </ComboBoxItem>
-                        <ComboBoxItem IsVisible="False" IsEnabled="False">
-                            <controls1:IconText Glyph="&#xEEED;" Text="屏幕主题色"/>
-                        </ComboBoxItem>
-                    </ComboBox>
-                </controls2:SettingsExpander.Footer>
-            </controls2:SettingsExpander>
-            
-            <StackPanel>
-                <!-- todo: 仅在使用自定义主题色时显示 -->
-                <!-- 第一主题色 -->
-                <controls2:SettingsExpander IconSource="{controls1:FluentIconSource &#xE51E;}"
-                                            Header="强调色"
-                                            Description="应用显示强调元素时所使用的颜色。">
-                    <controls2:SettingsExpander.IsVisible>
-                        <Binding Path="ViewModel.SettingsService.Settings.ColorSource"
-                                 Converter="{x:Static ObjectConverters.Equal}">
-                            <Binding.ConverterParameter>
-                                <system:Int32>0</system:Int32>
-                            </Binding.ConverterParameter>
-                        </Binding>
-                    </controls2:SettingsExpander.IsVisible>
-                    <controls2:SettingsExpander.Footer>
-                        <ColorPicker
-                            Color="{Binding ViewModel.SettingsService.Settings.PrimaryColor, Mode=TwoWay}" />
-                    </controls2:SettingsExpander.Footer>
-                </controls2:SettingsExpander>
-                
-            </StackPanel>
             <!-- 壁纸主题色 -->
             <!-- <StackPanel> -->
             <!--     ~1~ todo: 仅在使用自壁纸主题色时显示 @1@ -->
@@ -532,23 +409,6 @@
                 </controls2:SettingsExpanderItem>
             </controls2:SettingsExpander>
             
-            <!-- 字体颜色 -->
-            <controls2:SettingsExpander IconSource="{controls1:FluentIconSource &#xF22A;}"
-                                        Header="字体颜色"
-                                        Description="调整字体颜色，将覆盖主题默认值。">
-                <controls2:SettingsExpander.Footer>
-                    <StackPanel Orientation="Horizontal">
-                    
-                        <ColorPicker
-                            VerticalAlignment="Center"
-                            Margin="0 0 6 0"
-                            Color="{Binding ViewModel.SettingsService.Settings.CustomForegroundColor, Mode=TwoWay}"
-                            IsVisible="{Binding ViewModel.SettingsService.Settings.IsCustomForegroundColorEnabled}"/>
-                        <ToggleSwitch VerticalAlignment="Center"
-                                      IsChecked="{Binding ViewModel.SettingsService.Settings.IsCustomForegroundColorEnabled}" />
-                    </StackPanel>
-                </controls2:SettingsExpander.Footer>
-            </controls2:SettingsExpander>
             <!-- 字体预览 -->
             <TabControl Classes="compact" Padding="0">
                 <TabItem Header="字体预览">

@@ -190,9 +190,9 @@ public partial class HomePage : UserControl
             {
                 Directory.Delete(Path.Combine(CommonDirectories.AppRootFolderPath, "Profiles"), true);
             }
-            if (Directory.Exists(PluginService.PluginsRootPath))
+            if (Directory.Exists(Path.Combine(CommonDirectories.AppRootFolderPath, "Plugins")))
             {
-                Directory.Delete(PluginService.PluginsRootPath, true);
+                Directory.Delete(Path.Combine(CommonDirectories.AppRootFolderPath, "Plugins"), true);
             }
 
             this.ShowSuccessToast($"操作成功完成。");

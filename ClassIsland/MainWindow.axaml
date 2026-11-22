@@ -32,10 +32,7 @@
         ShowActivated="False"
         TransparencyBackgroundFallback="Transparent">
     <Window.ShowInTaskbar>
-        <MultiBinding Converter="{x:Static BoolConverters.Or}">
-            <Binding Path="ViewModel.IsWindowMode"/>
-            <Binding Path="ViewModel.Settings.IsScreenRecordingModeEnabled"/>
-        </MultiBinding>
+        <Binding Path="ViewModel.Settings.IsScreenRecordingModeEnabled"/>
     </Window.ShowInTaskbar>
     <Window.Transitions>
         <Transitions>
@@ -56,41 +53,18 @@
                     </OnPlatform>
                 </NativeMenuItem.Icon>
             </NativeMenuItem>
-            <NativeMenuItem Header="教学…"
-                            ci:NativeMenuItemAssist.IconSource="{ci:FluentIconSource &#xE959;}"
-                            Click="NativeMenuItemTutorials_OnClick" 
-                            IsVisible="{Binding ViewModel.Settings.IsWelcomeWindowShowed}"/>
             <NativeMenuItem Header="帮助文档…"
                             ci:NativeMenuItemAssist.IconSource="{ci:FluentIconSource &#xE23C;}"
-                            Click="MenuItemHelps_OnClick" 
-                            IsVisible="{Binding ViewModel.Settings.IsWelcomeWindowShowed}"/>
+                            Click="MenuItemHelps_OnClick"/>
             <NativeMenuItemSeparator/>
             <NativeMenuItem Header="显示主界面" Click="MenuItemSwitchMainWindowVisibility_OnClick"
                             ci:NativeMenuItemAssist.IconSource="{ci:FluentIconSource &#xE813;}">
-                <MenuItem.IsVisible>
-                    <MultiBinding Converter="{StaticResource BooleanAndExpressionMultiConverter}" Mode="OneWay">
-                        <Binding Path="ViewModel.Settings.IsMainWindowVisible" Mode="OneWay" Converter="{StaticResource InvertBooleanConverter}" />
-                        <Binding Path="ViewModel.Settings.IsWelcomeWindowShowed" Mode="OneWay"/>
-                    </MultiBinding>
-                </MenuItem.IsVisible>
             </NativeMenuItem>
             <NativeMenuItem Header="隐藏主界面" Click="MenuItemSwitchMainWindowVisibility_OnClick"
                             ci:NativeMenuItemAssist.IconSource="{ci:FluentIconSource &#xE817;}">
-                <MenuItem.IsVisible>
-                    <MultiBinding Converter="{StaticResource BooleanAndExpressionMultiConverter}" Mode="OneWay">
-                        <Binding Path="ViewModel.Settings.IsMainWindowVisible" Mode="OneWay"/>
-                        <Binding Path="ViewModel.Settings.IsWelcomeWindowShowed" Mode="OneWay"/>
-                    </MultiBinding>
-                </MenuItem.IsVisible>
             </NativeMenuItem>
             <NativeMenuItem Header="清除全部提醒" Click="MenuItemClearAllNotifications_OnClick"
                             ci:NativeMenuItemAssist.IconSource="{ci:FluentIconSource &#xE029;}">
-                <MenuItem.IsVisible>
-                    <MultiBinding Converter="{StaticResource BooleanAndExpressionMultiConverter}" Mode="OneWay">
-                        <Binding Path="ViewModel.Settings.IsWelcomeWindowShowed" Mode="OneWay"/>
-                        <Binding Path="NotificationHostService.IsNotificationsPlaying" Mode="OneWay"/>
-                    </MultiBinding>
-                </MenuItem.IsVisible>
             </NativeMenuItem>
             <NativeMenuItem Header="更多选项…" Menu="{Binding MoreOptionsMenu}"
                             ci:NativeMenuItemAssist.IconSource="{ci:FluentIconSource &#xEBAC;}"
@@ -105,8 +79,6 @@
                             ci:NativeMenuItemAssist.IconSource="{ci:FluentIconSource &#xE15F;}">
             </NativeMenuItem>
             <NativeMenuItemSeparator/>
-            <NativeMenuItem Header="编辑主界面…" Click="NativeMenuItemEnterEditMode_OnClick" 
-                            ci:NativeMenuItemAssist.IconSource="{ci:FluentIconSource &#xE7C9;}"/>
             <NativeMenuItem Header="应用设置…" Click="MenuItemSettings_OnClick" 
                             ci:NativeMenuItemAssist.IconSource="{ci:FluentIconSource &#xEF27;}"/>
             <NativeMenuItemSeparator />
@@ -121,12 +93,8 @@
                     <NativeMenuItem Header="DevTools" Click="NativeMenuItemDebugDevTools_OnClick"/>
                     <NativeMenuItem Header="DevPortal" Click="NativeMenuItemDebugDevPortal_OnClick"/>
                     <NativeMenuItem Header="截图工具" Click="NativeMenuItemDebugOpenScreenshotWindow_OnClick"/>
-                    <NativeMenuItem Header="教程编辑器" Click="NativeMenuItemOpenTutorialEditor_OnClick"/>
                     <NativeMenuItemSeparator/>
-                    <NativeMenuItem  Header="启用课表" Click="NativeMenuItemDebugEnableTempClassPlan_OnClick"/>
                     <NativeMenuItem  Header="显示崩溃窗口" Click="NativeMenuItemDebugCrashTest_OnClick"/>
-                    <NativeMenuItem  Header="WelcomeWindow" Click="NativeMenuItemDebugOpenWelcomeWindow_OnClick"/>
-                    <NativeMenuItem  Header="WelcomeWindow (full)" Click="NativeMenuItemDebugOpenWelcomeWindowFull_OnClick"/>
                 </NativeMenu>
             </NativeMenuItem>
         </NativeMenu>
@@ -134,36 +102,38 @@
     <Window.Styles>
         <Style Selector="Grid#GridRoot">
             <Setter Property="IsVisible">
-                <MultiBinding Converter="{x:Static BoolConverters.Or}">
-                    <Binding Path="SettingsService.Settings.IsMainWindowVisible"/>
-                    <Binding Path="ViewModel.IsEditMode"/>
-                </MultiBinding>
+                <Binding Path="SettingsService.Settings.IsMainWindowVisible"/>
             </Setter>
             <Style Selector="^.ExplicitShowed.OverlayOpened">
                 <Setter Property="IsVisible">
-                    <MultiBinding Converter="{x:Static BoolConverters.Or}">
-                        <Binding Path="SettingsService.Settings.IsMainWindowVisible"/>
-                        <Binding Path="ViewModel.IsEditMode"/>
-                    </MultiBinding>
+                    <Binding Path="SettingsService.Settings.IsMainWindowVisible"/>
                 </Setter>
             </Style>
+            <!-- 上课隐藏不再用样式瞬间隐藏，改由 MainWindow 的收起动画处理 -->
             <Style Selector="^.BasicHidingMode:not(.ExplicitShowed)">
-                <Style Selector="^.HideOnClass.StateOnClass">
-                    <Setter Property="IsVisible" Value="{Binding ViewModel.IsEditMode}"/>
-                </Style>
                 <Style Selector="^.HideOnMaxWindow.ForegroundMaxWindow">
-                    <Setter Property="IsVisible" Value="{Binding ViewModel.IsEditMode}"/>
+                    <Setter Property="IsVisible" Value="False"/>
                 </Style>
                 <Style Selector="^.HideOnFullscreen.ForegroundFullscreen">
-                    <Setter Property="IsVisible" Value="{Binding ViewModel.IsEditMode}"/>
+                    <Setter Property="IsVisible" Value="False"/>
                 </Style>
             </Style>
             <Style Selector="^.AdvancedHidingMode.HideRuleSatisfied:not(.ExplicitShowed)">
-                <Setter Property="IsVisible" Value="{Binding ViewModel.IsEditMode}"/>
+                <Setter Property="IsVisible" Value="False"/>
+            </Style>
+            <Style Selector="^.ProfileTabOpened">
+                <Setter Property="IsVisible" Value="False"/>
+            </Style>
+            <!-- 无时间/课程时收起主界面 -->
+            <Style Selector="^.Collapsed">
+                <Setter Property="IsVisible" Value="False"/>
             </Style>
         </Style>
-        <Style Selector=":is(Window):not(:edit-mode) :is(Control)">
+        <Style Selector=":is(Window) :is(Control)">
             <Setter Property="Focusable" Value="False"/>
+        </Style>
+        <Style Selector="Border#ProfileTabRoot :is(Control)">
+            <Setter Property="Focusable" Value="True"/>
         </Style>
         <Style Selector=":is(Window)">
             <Setter Property="Background" Value="Transparent"/>
@@ -174,67 +144,67 @@
             <Setter Property="CanMinimize" Value="False"/>
             <Setter Property="Title" Value="ClassIsland"/>
         </Style>
-        <Style Selector=":is(Window):edit-mode">
-            <Setter Property="Background" Value="{DynamicResource SmokeFillColorDefaultBrush}"/>
-            <Setter Property="TransparencyLevelHint" Value="AcrylicBlur, Transparent"/>
-            <Setter Property="Title" Value="编辑主界面 | ClassIsland"/>
-        </Style>
         <Style Selector=":is(Window):windowed">
             <Setter Property="SystemDecorations" Value="Full"/>
             <Setter Property="CanResize" Value="True"/>
             <Setter Property="CanMaximize" Value="True"/>
             <Setter Property="CanMinimize" Value="True"/>
-            <Style Selector="^:no-windowed-transparent:edit-mode">
-                <Setter Property="Background" Value="{DynamicResource SolidBackgroundFillColorBaseBrush}"/>
-                <Setter Property="TransparencyLevelHint" Value="None"/>
-            </Style>
+        </Style>
+
+        <!-- 课间轮换内容的切换动画：切换到某个视图时淡入并从下方轻微上移，切走时淡出并下沉 -->
+        <Style Selector="StackPanel.break-rotation-view">
+            <Setter Property="Opacity" Value="0"/>
+            <Setter Property="RenderTransform" Value="translateY(7px)"/>
+        </Style>
+        <Style Selector="StackPanel.break-rotation-view.active">
+            <Setter Property="Opacity" Value="1"/>
+            <Setter Property="RenderTransform" Value="translateY(0px)"/>
         </Style>
     </Window.Styles>
     <Grid x:Name="WindowRoot"
+          HorizontalAlignment="Stretch"
+          VerticalAlignment="Stretch"
           Background="Transparent"
-          ci:MainWindowStylesAssist.MainWindowInEditMode="{Binding ViewModel.IsEditMode}"
-          PointerPressed="MainWindowEditSurface_OnPointerPressed"
           ci:WrapPanelResizingAnimationAssist.Duration="0:0:0.300"
           ci:WrapPanelResizingAnimationAssist.Easing="0.65, 0, 0.35, 1.0">
-        <ZoomBorder Name="ZoomBorder" 
-                    Stretch="None" 
+        <ZoomBorder Name="ZoomBorder"
+                    Visual.ZIndex="1001"
+                    Stretch="None"
                     ZoomSpeed="1.2"
                     Focusable="True"
                     EnableConstrains="True"
                     MaxZoomX="3" MaxZoomY="3"
                     MinZoomX="0.5" MinZoomY="0.5"
-                    Background="Transparent" 
-                    VerticalAlignment="Stretch" 
+                    Background="Transparent"
+                    VerticalAlignment="Stretch"
                     HorizontalAlignment="Stretch"
                     ShowZoomIndicator="True"
                     EnableGestureRotation="False"
                     TextElement.FontFamily="{Binding ViewModel.Settings.MainWindowFont, Mode=OneWay, Converter={StaticResource StringToFontFamilyConverter}}"
-                    TextElement.FontWeight="{Binding ViewModel.Settings.MainWindowFontWeight2, Converter={StaticResource IntToFontWeightConverter}}">
+                    TextElement.FontWeight="{Binding ViewModel.Settings.MainWindowFontWeight2, Converter={StaticResource IntToFontWeightConverter}}"
+                    TextElement.Foreground="{Binding ViewModel.Settings.MainWindowFontColor, Converter={StaticResource ColorToColorPickerBrushConverter}}">
+            <ZoomBorder.RenderTransform>
+                <!-- 主界面内容滑入/滑出动画：与入场幕布同步，文字随蓝条一起滑进 -->
+                <TranslateTransform/>
+            </ZoomBorder.RenderTransform>
             <Canvas x:Name="LayoutContainerGrid">
-                <Panel x:Name="WorkingRoot"
-                       Canvas.Left="{Binding ViewModel.ActualClientBound.X}"
-                       Canvas.Top="{Binding ViewModel.ActualClientBound.Y}"
-                       ClipToBounds="False">
+                    <Panel x:Name="WorkingRoot"
+                           HorizontalAlignment="Stretch"
+                           Canvas.Left="{Binding ViewModel.ActualClientBound.X}"
+                           Canvas.Top="{Binding ViewModel.ActualClientBound.Y}"
+                           ClipToBounds="False">
                     <Panel.Styles>
-                        <Style Selector="Panel#WorkingRoot[(ci|MainWindowStylesAssist.MainWindowInEditMode)=False]">
+                        <Style Selector="Panel#WorkingRoot">
                             <Setter Property="Width" Value="{Binding ViewModel.ActualClientBound.Width}"/>
                             <Setter Property="Height" Value="{Binding #RootLayoutTransformControl.Bounds.Height}"/>
-                        </Style>
-                        <Style Selector="Panel#WorkingRoot[(ci|MainWindowStylesAssist.MainWindowInEditMode)=True]">
-                            <Setter Property="MinWidth" Value="{Binding ViewModel.ActualClientBound.Width}"/>
-                            <Setter Property="Height" Value="{Binding ViewModel.ActualClientBound.Height}"/>
                         </Style>
                         
                     </Panel.Styles>
                     <!-- ROOT -->
                     <VisualLayerManager>
-                        <VisualLayerManager.IsEnabled>
-                            <MultiBinding Converter="{x:Static BoolConverters.Or}">
-                                <Binding Path="!ViewModel.IsEditMode"/>
-                                <Binding Path="!ManagementService.Policy.DisableSettingsEditing"/>
-                            </MultiBinding>
-                        </VisualLayerManager.IsEnabled>
+                        <VisualLayerManager.IsEnabled>True</VisualLayerManager.IsEnabled>
                         <StackPanel x:Name="StackPanelRootContainer"
+                                    HorizontalAlignment="Stretch"
                                     SizeChanged="StackPanelRootContainer_OnSizeChanged">
                             <StackPanel.Styles>
                                 <Style Selector=":dock-top StackPanel#StackPanelRootContainer">
@@ -242,9 +212,6 @@
                                 </Style>
                                 <Style Selector=":dock-bottom StackPanel#StackPanelRootContainer">
                                     <Setter Property="VerticalAlignment" Value="Bottom" />
-                                </Style>
-                                <Style Selector=":edit-mode StackPanel#StackPanelRootContainer">
-                                    <Setter Property="VerticalAlignment" Value="Center" />
                                 </Style>
                             </StackPanel.Styles>
                             <LayoutTransformControl x:Name="RootLayoutTransformControl"
@@ -270,19 +237,20 @@
 
                                       Classes.ExplicitShowed="{Binding ViewModel.IsNotificationWindowExplicitShowed, Mode=OneWay}"
                                       Classes.OverlayOpened="{Binding ViewModel.IsOverlayOpened, Mode=OneWay}"
+                                      Classes.ProfileTabOpened="{Binding ViewModel.IsProfileTabOpen, Mode=OneWay}"
                                       Classes.HideOnClass="{Binding ViewModel.Settings.HideOnClass, Mode=OneWay}"
                                       Classes.HideOnMaxWindow="{Binding ViewModel.Settings.HideOnMaxWindow, Mode=OneWay}"
                                       Classes.HideOnFullscreen="{Binding ViewModel.Settings.HideOnFullscreen, Mode=OneWay}"
                                       Classes.ForegroundMaxWindow="{Binding ViewModel.IsForegroundMaxWindow, Mode=OneWay}"
                                       Classes.ForegroundFullscreen="{Binding ViewModel.IsForegroundFullscreen, Mode=OneWay}"
                                       Classes.HideRuleSatisfied="{Binding ViewModel.IsHideRuleSatisfied, Mode=OneWay}"
+                                      Classes.Collapsed="{Binding ViewModel.IsMainWindowCollapsed, Mode=OneWay}"
 
-                                      ci:MainWindowStylesAssist.IsIslandSeperated="{Binding ViewModel.Settings.IsIslandSeperated}"
                                       ci:MainWindowStylesAssist.IsProgressAccuracyReduced="{Binding ViewModel.Settings.ReduceProgressAccuracy}"
-                                      ci:MainWindowStylesAssist.CornerRadius="{Binding ViewModel.Settings.RadiusX}"
-                                      ci:MainWindowStylesAssist.BackgroundOpacity="{Binding ViewModel.Settings.Opacity}"
-                                      ci:MainWindowStylesAssist.BackgroundCorlor="{Binding ViewModel.Settings.BackgroundColor}"
-                                      ci:MainWindowStylesAssist.IsCustomBackgroundColorEnabled="{Binding ViewModel.Settings.IsCustomBackgroundColorEnabled}">
+                                      ci:MainWindowStylesAssist.CornerRadius="0"
+                                      ci:MainWindowStylesAssist.BackgroundOpacity="1"
+                                      ci:MainWindowStylesAssist.BackgroundCorlor="{Binding ViewModel.Settings.MainWindowCurtainColor}"
+                                      ci:MainWindowStylesAssist.IsCustomBackgroundColorEnabled="True">
                                     <Classes.BasicHidingMode>
                                         <Binding Path="ViewModel.Settings.HideMode"
                                                  Converter="{x:Static ObjectConverters.Equal}">
@@ -299,14 +267,6 @@
                                             </Binding.ConverterParameter>
                                         </Binding>
                                     </Classes.AdvancedHidingMode>
-                                    <Classes.StateOnClass>
-                                        <Binding Path="LessonsService.CurrentState"
-                                                 Converter="{x:Static ObjectConverters.Equal}">
-                                            <Binding.ConverterParameter>
-                                                <enums:TimeState>OnClass</enums:TimeState>
-                                            </Binding.ConverterParameter>
-                                        </Binding>
-                                    </Classes.StateOnClass>
 
                                     <Border ClipToBounds="False"
                                             x:Name="ResourceLoaderBorder"
@@ -315,8 +275,6 @@
 
                                         </Border.Resources>
                                         <Grid
-                                            editMode:EditableComponentsListBox.RequestOpenChildComponents="EditableComponentsListBox_OnRequestOpenChildComponents"
-                                            editMode:EditableComponentsListBox.RequestAddComponent="EditableComponentsListBox_OnRequestAddComponent"
                                             editMode:EditableComponentsListBox.ComponentDeleted="EditableComponentsListBox_OnComponentDeleted">
                                             <StackPanel>
                                                 <ItemsControl Grid.Column="0"
@@ -341,8 +299,7 @@
                                                     <ItemsControl.ItemsPanel>
                                                         <ItemsPanelTemplate>
                                                             <StackPanel
-                                                                Spacing="{Binding ViewModel.Settings.MainWindowLineVerticalMargin}"
-                                                                Classes.animated-resize="{Binding !$self.(ci:MainWindowStylesAssist.MainWindowInEditMode)}" />
+                                                                Classes.animated-resize="True" />
                                                         </ItemsPanelTemplate>
                                                     </ItemsControl.ItemsPanel>
                                                     <ItemsControl.ItemTemplate>
@@ -350,21 +307,6 @@
                                                             <Grid HorizontalAlignment="Stretch"
                                                                   VerticalAlignment="Stretch"
                                                                   ColumnDefinitions="Auto, *, Auto">
-                                                                <Rectangle HorizontalAlignment="Stretch"
-                                                                           Grid.Column="0" Grid.ColumnSpan="3"
-                                                                           VerticalAlignment="Stretch"
-                                                                           x:Name="SelectionBorder"
-                                                                           Stroke="{DynamicResource ControlStrokeColorDefaultBrush}"
-                                                                           StrokeThickness="1.5"
-                                                                           StrokeLineCap="Round"
-                                                                           StrokeJoin="Bevel"
-                                                                           Opacity="0.75"
-                                                                           StrokeDashArray="1, 1.5"
-                                                                           IsVisible="{Binding $self.(ci:MainWindowStylesAssist.MainWindowInEditMode)}" />
-                                                                <ci:TutorialBarrier Grid.Column="0">
-                                                                    <ci:TouchDragThumb
-                                                                        IsVisible="{Binding $self.(ci:MainWindowStylesAssist.MainWindowInEditMode)}" />
-                                                                </ci:TutorialBarrier>
                                                                 <controls:MainWindowLine Grid.Column="1"
                                                                         WindowDockingLocation="{Binding ViewModel.Settings.WindowDockingLocation, Mode=OneWay, RelativeSource={RelativeSource AncestorType=local:MainWindow}}"
                                                                         LastStoryboardName="{Binding ViewModel.LastStoryboardName, Mode=OneWay, RelativeSource={RelativeSource AncestorType=local:MainWindow}}"
@@ -383,7 +325,6 @@
                                                                         AttachedToVisualTree="ListBoxMainWindowLineSettings_OnAttachedToVisualTree"
                                                                         DetachedFromVisualTree="ListBoxMainWindowLineSettings_OnDetachedFromVisualTree"
                                                                         SelectionChanged="SelectorComponents_OnSelectionChanged"
-                                                                        ShowComponentSettingsCommand="{Binding $parent[local:MainWindow].ShowComponentSettingsCommand}"
                                                                         ClipToBounds="False">
                                                                         <editMode:EditableComponentsListBox.ItemTemplate>
                                                                             <DataTemplate>
@@ -393,193 +334,83 @@
                                                                                     Settings="{Binding}"
                                                                                     HidingRules="{Binding HidingRules, Mode=OneWay}"
                                                                                     HideOnRule="{Binding HideOnRule, Mode=OneWay}"
-                                                                                    Margin="6 0" />
+                                                                                    Margin="0" />
                                                                             </DataTemplate>
                                                                         </editMode:EditableComponentsListBox.ItemTemplate>
                                                                     </editMode:EditableComponentsListBox>
                                                                 </controls:MainWindowLine>
-                                                                <ci:TutorialBarrier Grid.Column="2"
-                                                                        IsVisible="{Binding $self.(ci:MainWindowStylesAssist.MainWindowInEditMode)}">
-                                                                    <StackPanel Orientation="Horizontal"
-                                                                            Classes="items-valign-center"
-                                                                            Spacing="2"
-                                                                            TextElement.FontSize="14">
-                                                                        <Button
-                                                                            Command="{Binding $parent[local:MainWindow].OpenMainWindowLineSettingsCommand}"
-                                                                            CommandParameter="{Binding}"
-                                                                            VerticalAlignment="Center"
-                                                                            x:Name="ButtonMainWindowLineSettings"
-                                                                            ToolTip.Tip="设置…"
-                                                                            Background="Transparent"
-                                                                            BorderThickness="0"
-                                                                            Content="{ci:FluentIcon &#xEF27;}" />
-                                                                        <ToggleButton
-                                                                            IsChecked="{Binding IsMainLine}"
-                                                                            Click="ToggleButtonIsMainLine_OnIsCheckedChanged"
-                                                                            VerticalAlignment="Center"
-                                                                            x:Name="ButtonMainWindowLineIsMainLine"
-                                                                            ToolTip.Tip="此行是主要行"
-                                                                            Background="Transparent"
-                                                                            BorderThickness="0"
-                                                                            Content="{ci:FluentIcon &#xE994;}" />
-                                                                        <ToggleButton
-                                                                            IsChecked="{Binding IsNotificationEnabled}"
-                                                                            VerticalAlignment="Center"
-                                                                            x:Name="ButtonMainWindowLineIsNotificationEnabled"
-                                                                            ToolTip.Tip="此行可以显示提醒"
-                                                                            Click="ToggleButtonIsNotificationEnabled_OnIsCheckedChanged"
-                                                                            Background="Transparent"
-                                                                            BorderThickness="0"
-                                                                            Content="{ci:FluentIcon &#xE02B;}" />
-                                                                        <Button
-                                                                            Foreground="IndianRed"
-                                                                            VerticalAlignment="Center"
-                                                                            x:Name="ButtonMainWindowLineDelete"
-                                                                            ToolTip.Tip="删除"
-                                                                            Command="{Binding $parent[local:MainWindow].RemoveMainWindowLineCommand}"
-                                                                            CommandParameter="{Binding}"
-                                                                            Theme="{StaticResource TransparentButton}"
-                                                                            Content="{ci:FluentIcon &#xE61D;}" />
-                                                                    </StackPanel>
-                                                                </ci:TutorialBarrier>
                                                             </Grid>
                                                         </DataTemplate>
                                                     </ItemsControl.ItemTemplate>
                                                 </ItemsControl>
-                                                <Button HorizontalAlignment="Center"
-                                                        x:Name="ButtonMainWindowLineNew"
-                                                        IsVisible="{Binding $self.(ci:MainWindowStylesAssist.MainWindowInEditMode)}"
-                                                        TextElement.FontSize="14"
-                                                        Click="ButtonNewMainWindowLine_OnClick">
-                                                    <ci:IconText Glyph="&#xE00D;" Text="新主界面行" />
-                                                </Button>
                                             </StackPanel>
-                                            <ItemsControl ItemsSource="{Binding ViewModel.ContainerComponents}"
-                                                          Classes="draggable"
-                                                          x:Name="ContainerComponentsEditHost"
-                                                          ClipToBounds="False">
-                                                <ItemsControl.Styles>
-                                                    <Style
-                                                        Selector=":is(ItemsControl).draggable > :is(ContentPresenter)">
-                                                        <Setter Property="(Interaction.Behaviors)">
-                                                            <BehaviorCollectionTemplate>
-                                                                <BehaviorCollection>
-                                                                    <ci:AdvancedCanvasDragBehavior
-                                                                        AllowDragFromDragThumbOnly="True" />
-                                                                </BehaviorCollection>
-                                                            </BehaviorCollectionTemplate>
-                                                        </Setter>
-                                                    </Style>
-                                                    <Style Selector="ItemsControl > ContentPresenter"
-                                                           x:DataType="editMode:EditModeContainerComponentInfo">
-                                                        <Setter Property="(Canvas.Left)" Value="{Binding X}" />
-                                                        <Setter Property="(Canvas.Top)" Value="{Binding Y}" />
-                                                    </Style>
-                                                    <Style Selector="ItemsControl > ContentPresenter:dragging">
-                                                        <Setter Property="Opacity" Value="0.5" />
-                                                        <Setter Property="ZIndex" Value="1" />
-                                                    </Style>
-                                                </ItemsControl.Styles>
-                                                <ItemsControl.ItemTemplate>
-                                                    <DataTemplate>
-                                                        <Border HorizontalAlignment="Center" VerticalAlignment="Bottom"
-                                                                Margin="0 0 0 0"
-                                                                Background="{DynamicResource CommandBarOverflowPresenterBackground}"
-                                                                CornerRadius="6"
-                                                                Padding="4 0"
-                                                                BorderBrush="{DynamicResource CommandBarOverflowPresenterBorderBrush}"
-                                                                BorderThickness="1">
-                                                            <StackPanel Orientation="Horizontal"
-                                                                        Classes="items-valign-center"
-                                                                        Spacing="4">
-                                                                <ci:TouchDragThumb IsExplicitVisible="True"
-                                                                        Width="20" />
-                                                                <StackPanel TextElement.FontSize="14"
-                                                                            Classes="items-valign-center"
-                                                                            Orientation="Horizontal" Spacing="4"
-                                                                            Margin="4 0 0 0">
-                                                                    <ci:TutorialBarrier>
-                                                                        <Button Content="{ci:FluentIcon &#xE671;}"
-                                                                                ToolTip.Tip="关闭"
-                                                                                Theme="{StaticResource TransparentButton}"
-                                                                                Command="{Binding $parent[local:MainWindow].CloseContainerComponentCommand}"
-                                                                                CommandParameter="{Binding}" />
-                                                                    </ci:TutorialBarrier>
-                                                                    <controls1:IconSourceElement
-                                                                        IconSource="{Binding Settings.AssociatedComponentInfo.IconSource}"
-                                                                        VerticalAlignment="Center" Height="16"
-                                                                        Width="16"
-                                                                        ClipToBounds="False"
-                                                                        TextElement.FontSize="16"
-                                                                        Classes="repair-fontsize" />
-                                                                    <TextBlock
-                                                                        Text="{Binding Settings.AssociatedComponentInfo.Name}"
-                                                                        VerticalAlignment="Center" Margin="0 1 0 0" />
-                                                                </StackPanel>
-                                                                <Panel>
-                                                                    <Thumb>
-                                                                        <Thumb.Template>
-                                                                            <ControlTemplate>
-                                                                                <Border Background="Transparent" />
-                                                                            </ControlTemplate>
-                                                                        </Thumb.Template>
-                                                                    </Thumb>
-                                                                    <editMode:EditableComponentsListBox
-                                                                        ItemsSource="{Binding Settings.Children}"
-                                                                        Classes="root-components-control"
-                                                                        ContainerComponentStack="{Binding ComponentStack}"
-                                                                        AttachedToVisualTree="ListBoxContainerComponent_OnAttachedToVisualTree"
-                                                                        DetachedFromVisualTree="ListBoxContainerComponent_OnDetachedFromVisualTree"
-                                                                        SelectionChanged="SelectorComponents_OnSelectionChanged"
-                                                                        ShowComponentSettingsCommand="{Binding $parent[local:MainWindow].ShowComponentSettingsCommand}"
-                                                                        Tag="{Binding}"
-                                                                        ClipToBounds="False"
-                                                                        Height="40">
-                                                                        <editMode:EditableComponentsListBox.ItemTemplate>
-                                                                            <DataTemplate>
-                                                                                <ci:ComponentPresenter
-                                                                                    IsOnMainWindow="True"
-                                                                                    IsRootComponent="True"
-                                                                                    Settings="{Binding}"
-                                                                                    HidingRules="{Binding HidingRules, Mode=OneWay}"
-                                                                                    HideOnRule="{Binding HideOnRule, Mode=OneWay}"
-                                                                                    Margin="6 0" />
-                                                                            </DataTemplate>
-                                                                        </editMode:EditableComponentsListBox.ItemTemplate>
-                                                                    </editMode:EditableComponentsListBox>
-                                                                </Panel>
-                                                            </StackPanel>
-                                                        </Border>
-                                                    </DataTemplate>
-                                                </ItemsControl.ItemTemplate>
-                                                <ItemsControl.ItemsPanel>
-                                                    <ItemsPanelTemplate>
-                                                        <Canvas>
-                                                            <Interaction.Behaviors>
-                                                                <CanvasDragBehavior />
-                                                            </Interaction.Behaviors>
-                                                        </Canvas>
-                                                    </ItemsPanelTemplate>
-                                                </ItemsControl.ItemsPanel>
-                                                <ItemsControl.ItemContainerTheme>
-                                                    <ControlTheme TargetType="ListBoxItem">
-                                                        <Setter Property="Template">
-                                                            <ControlTemplate>
-                                                                <ContentPresenter Content="{TemplateBinding Content}"
-                                                                        ContentTemplate="{TemplateBinding ContentTemplate}"
-                                                                        Padding="0"
-                                                                        ClipToBounds="False"
-                                                                        Margin="0" />
-                                                            </ControlTemplate>
-                                                        </Setter>
-                                                    </ControlTheme>
-                                                </ItemsControl.ItemContainerTheme>
-                                                <ItemsControl.Template>
-                                                    <ControlTemplate>
-                                                        <ItemsPresenter ItemsPanel="{TemplateBinding ItemsPanel}" />
-                                                    </ControlTemplate>
-                                                </ItemsControl.Template>
-                                            </ItemsControl>
+
+                                            <!-- 课间内容轮换覆盖层：课间时主界面内容在 课表（原显示）/ 距离上课时间 / 当前时间 之间轮换；
+                                                 显示「课表」时淡出本层露出原内容，临近上课最后几十秒保持原显示。
+                                                 高度显式绑定行区域高度，避免大字号内容把窗口（SizeToContent=Height）撑高，
+                                                 否则鼠标移到溢出区域时不会触发主界面虚化。
+                                                 字号与主界面「倒计时」组件一致（MainWindowBodyFontSize）。 -->
+                                            <Border x:Name="BreakRotationOverlay"
+                                                    IsHitTestVisible="False"
+                                                    ClipToBounds="False"
+                                                    VerticalAlignment="Top"
+                                                    Height="{Binding #RootMainWindowLinesItemsControl.Bounds.Height}"
+                                                    Opacity="0"
+                                                    Background="{Binding ViewModel.Settings.MainWindowCurtainColor, Converter={StaticResource ColorToColorPickerBrushConverter}}">
+                                                <Border.Transitions>
+                                                    <Transitions>
+                                                        <DoubleTransition Property="Opacity"
+                                                                          Duration="0:0:0.18"
+                                                                          Easing="0.25, 0.1, 0.25, 1"/>
+                                                    </Transitions>
+                                                </Border.Transitions>
+                                                <Panel>
+                                                    <StackPanel x:Name="BreakRotationCountdownView"
+                                                                Classes="break-rotation-view"
+                                                                Orientation="Horizontal"
+                                                                HorizontalAlignment="Center"
+                                                                VerticalAlignment="Center"
+                                                                Spacing="8">
+                                                        <StackPanel.Transitions>
+                                                            <Transitions>
+                                                                <DoubleTransition Property="Opacity"
+                                                                                  Duration="0:0:0.26"
+                                                                                  Easing="0.25, 0.1, 0.25, 1"/>
+                                                                <TransformOperationsTransition Property="RenderTransform"
+                                                                                              Duration="0:0:0.32"
+                                                                                              Easing="0.25, 0.1, 0.25, 1"/>
+                                                            </Transitions>
+                                                        </StackPanel.Transitions>
+                                                        <TextBlock x:Name="BreakRotationCountdownText"
+                                                                   FontSize="{DynamicResource MainWindowBodyFontSize}"
+                                                                   VerticalAlignment="Center"/>
+                                                    </StackPanel>
+                                                    <StackPanel x:Name="BreakRotationClockView"
+                                                                Classes="break-rotation-view"
+                                                                Orientation="Horizontal"
+                                                                HorizontalAlignment="Center"
+                                                                VerticalAlignment="Center"
+                                                                Spacing="8">
+                                                        <StackPanel.Transitions>
+                                                            <Transitions>
+                                                                <DoubleTransition Property="Opacity"
+                                                                                  Duration="0:0:0.26"
+                                                                                  Easing="0.25, 0.1, 0.25, 1"/>
+                                                                <TransformOperationsTransition Property="RenderTransform"
+                                                                                              Duration="0:0:0.32"
+                                                                                              Easing="0.25, 0.1, 0.25, 1"/>
+                                                            </Transitions>
+                                                        </StackPanel.Transitions>
+                                                        <TextBlock x:Name="BreakRotationClockText"
+                                                                   FontSize="{DynamicResource MainWindowBodyFontSize}"
+                                                                   VerticalAlignment="Center"/>
+                                                        <TextBlock x:Name="BreakRotationDateText"
+                                                                   FontSize="{DynamicResource MainWindowBodyFontSize}"
+                                                                   Opacity="0.72"
+                                                                   VerticalAlignment="Center"/>
+                                                    </StackPanel>
+                                                </Panel>
+                                            </Border>
                                         </Grid>
 
                                     </Border>
@@ -591,49 +422,49 @@
                 </Panel>
             </Canvas>
         </ZoomBorder>
-        
-        <Border HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0 0 0 64"
-                IsVisible="{Binding ViewModel.IsEditMode}"
-                x:Name="OperateArea"
-                Background="{DynamicResource CommandBarOverflowPresenterBackground}"
-                CornerRadius="6"
-                Padding="4"
-                BorderBrush="{DynamicResource CommandBarOverflowPresenterBorderBrush}"
-                BorderThickness="1">
-            <ci:TutorialBarrier ExcludedTags="classisland.mainwindow.editMode.componentsLib.open,classisland.mainwindow.editMode.exit">
-                <StackPanel Orientation="Horizontal" Spacing="6">
-                    <Button Theme="{StaticResource TransparentButton}"
-                            x:Name="ButtonResetView"
-                            Command="{Binding #ZoomBorder.ResetMatrix}">
-                        <ci:IconText Glyph="&#xE12F;" Text="重置视图" />
-                    </Button>
-                    <Line VerticalAlignment="Center" Stroke="{DynamicResource DividerStrokeColorDefaultBrush}"
-                          StrokeThickness="1"
-                          HorizontalAlignment="Center" StartPoint="0,0" EndPoint="0,25">
-                    </Line>
-                    <Button Click="ButtonOpenAppearanceSettings_OnClick" Theme="{StaticResource TransparentButton}"
-                            IsEnabled="{Binding !ManagementService.Policy.DisableSettingsEditing}">
-                        <ci:IconText Glyph="&#xE51E;" Text="外观" />
-                    </Button>
-                    <Button Click="ButtonOpenComponentsLib_OnClick" Theme="{StaticResource TransparentButton}"
-                            x:Name="ButtonOpenComponentsLib"
-                            IsEnabled="{Binding !ManagementService.Policy.DisableSettingsEditing}">
-                        <ci:IconText Glyph="&#xE071;" Text="添加组件" />
-                    </Button>
-                    <Button Click="ButtonManageComponentLayouts_OnClick" Theme="{StaticResource TransparentButton}"
-                            IsEnabled="{Binding !ManagementService.Policy.DisableSettingsEditing}">
-                        <ci:IconText Glyph="&#xE699;" Text="{Binding ViewModel.Settings.CurrentComponentConfig}"
-                                     MaxWidth="150" />
-                    </Button>
-                    <Button Click="ButtonExitEditMode_OnClick" Classes="accent"
-                            x:Name="ButtonExitEditMode">
-                        <ci:IconText Glyph="&#xE424;" Text="完成" />
-                    </Button>
-                </StackPanel>
-            </ci:TutorialBarrier>
+
+        <!-- 主界面入场动画幕布：白色块先滑入，可编辑的主界面色块随后进入并盖住它；
+             主界面内容（文字）位于幕布之上，与色块同步滑入，动画结束后揭幕露出主界面。
+             窗口停靠在底部（WindowDockingLocation=4）时动画方向改为从下向上。 -->
+        <Panel x:Name="EntranceCurtainHost"
+               ClipToBounds="True"
+               IsHitTestVisible="False"
+               ZIndex="1000"
+               IsVisible="False">
+            <Border x:Name="EntranceCurtainBack">
+                <Border.RenderTransform>
+                    <TranslateTransform/>
+                </Border.RenderTransform>
+            </Border>
+            <Border x:Name="EntranceCurtainFront">
+                <Border.RenderTransform>
+                    <TranslateTransform/>
+                </Border.RenderTransform>
+            </Border>
+        </Panel>
+
+        <!-- 启动欢迎信息：入场动画结束后显示 5 秒 -->
+        <Border x:Name="WelcomeOverlay"
+                Visual.ZIndex="1002"
+                IsHitTestVisible="False"
+                IsVisible="False"
+                Background="{Binding ViewModel.Settings.MainWindowCurtainColor, Converter={StaticResource ColorToColorPickerBrushConverter}}">
+            <StackPanel VerticalAlignment="Center"
+                        HorizontalAlignment="Center"
+                        Orientation="Vertical"
+                        Spacing="0"
+                        TextElement.Foreground="{Binding ViewModel.Settings.MainWindowFontColor, Converter={StaticResource ColorToColorPickerBrushConverter}}">
+                <TextBlock Text="启动成功，欢迎！"
+                           FontSize="15"
+                           LineHeight="18"
+                           HorizontalAlignment="Center"/>
+                <TextBlock Text="Fork by li2012China"
+                           FontSize="11"
+                           LineHeight="14"
+                           HorizontalAlignment="Center"
+                           Opacity="0.85"/>
+            </StackPanel>
         </Border>
-        
-        <ContentPresenter x:Name="EditModeViewCp" />
 
         <!-- debug -->
         <StackPanel IsVisible="{Binding ViewModel.Settings.IsMainWindowDebugEnabled}"
@@ -673,14 +504,38 @@
                 <Run Text="{Binding Width}" />
                 <Run Text="{Binding Height}" />
             </TextBlock>
-            <TextBlock>
-                <Run Text="IsEditMode:" />
-                <Run Text="{Binding ViewModel.IsEditMode}" />
-            </TextBlock>
-            <TextBlock>
-                <Run Text="IsWindowMode:" />
-                <Run Text="{Binding ViewModel.IsWindowMode}" />
-            </TextBlock>
         </StackPanel>
+
+        <Border x:Name="ProfileTabRoot"
+                IsVisible="{Binding ViewModel.IsProfileTabOpen}"
+                Background="{DynamicResource SolidBackgroundFillColorBaseBrush}">
+            <Border.Styles>
+                <Style Selector="Border#ProfileTabRoot.StateOnClass">
+                    <Setter Property="IsVisible" Value="False"/>
+                </Style>
+            </Border.Styles>
+            <Classes.StateOnClass>
+                <Binding Path="LessonsService.CurrentState" Converter="{x:Static ObjectConverters.Equal}">
+                    <Binding.ConverterParameter>
+                        <enums:TimeState>OnClass</enums:TimeState>
+                    </Binding.ConverterParameter>
+                </Binding>
+            </Classes.StateOnClass>
+            <DockPanel>
+                <Border DockPanel.Dock="Left" Width="88"
+                        Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}"
+                        BorderBrush="{DynamicResource DividerStrokeColorDefaultBrush}" BorderThickness="0,0,1,0">
+                    <StackPanel Spacing="8" Margin="8" VerticalAlignment="Top">
+                        <Button HorizontalAlignment="Stretch" Click="ButtonOpenMainTab_OnClick">
+                            <ci:IconText Glyph="&#xE80B;" Text="主界面" />
+                        </Button>
+                        <Button HorizontalAlignment="Stretch" Click="ButtonOpenProfileTab_OnClick">
+                            <ci:IconText Glyph="&#xE699;" Text="档案" />
+                        </Button>
+                    </StackPanel>
+                </Border>
+                <ContentControl x:Name="ProfileTabContentHost" Margin="12" />
+            </DockPanel>
+        </Border>
     </Grid>
 </Window>

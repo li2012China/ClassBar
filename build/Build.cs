@@ -43,8 +43,6 @@ partial class Build : NukeBuild
 
     readonly AbsolutePath DesktopAppEntryProject = RootDirectory / "ClassIsland.Desktop" / "ClassIsland.Desktop.csproj";
     readonly AbsolutePath LauncherEntryProject = RootDirectory / "ClassIsland.Launcher" / "ClassIsland.Launcher.csproj";
-    readonly AbsolutePath PluginDevAppPath = RootDirectory / "out" / "ClassIsland_Dev";
-    readonly AbsolutePath PluginDevAppPublishPath = RootDirectory / "out" / "ClassIsland_Dev" / "bin";
     readonly AbsolutePath NupkgEntryProject = RootDirectory / "ClassIsland.Filter.Linux.slnf";
     readonly AbsolutePath AppOutputPath = RootDirectory / "out";
     readonly AbsolutePath AppPublishPath = RootDirectory / "out" / "ClassIsland";
@@ -109,11 +107,6 @@ partial class Build : NukeBuild
             }
             foreach (var dir in Directory.EnumerateDirectories(AppOutputPath))
             {
-                if (Path.GetFullPath(dir) == PluginDevAppPath)
-                {
-                    continue;
-                }
-
                 Directory.Delete(dir, true);
             }
 

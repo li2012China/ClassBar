@@ -5,7 +5,6 @@ using System.Collections.Specialized;
 using System.Linq;
 using System.Text.Json.Serialization;
 using Avalonia.Media;
-using ClassIsland.Core.Models.Plugin;
 using ClassIsland.Core.Models.Ruleset;
 using ClassIsland.Core.Models.Weather;
 using ClassIsland.Shared;
@@ -34,15 +33,12 @@ public class Settings : ObservableRecipient, ILessonControlSettings, INotificati
     private Color _backgroundColor = Colors.Black;
     private Color _primaryColor = Colors.DeepSkyBlue;
     private Color _secondaryColor = Colors.Aquamarine;
-    private DateTime _singleWeekStartTime =
-        DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek); // 取周日
-    //  DateTime.Today.AddDays(-(DateTime.Today.DayOfWeek switch { // 取周一
-    //         DayOfWeek.Sunday => 6,
-    //         _ => (int)DateTime.Today.DayOfWeek - 1
-    //     }));
+    private Color _mainWindowCurtainColor = Color.FromRgb(0, 164, 235);
+    private Color _mainWindowFontColor = Colors.White;
+    private DateTime _singleWeekStartTime = GetDefaultSemesterStartTime();
     private int _classPrepareNotifySeconds = 60;
     private bool _showDate = true;
-    private bool _hideOnClass = false;
+    private bool _hideOnClass = true;
     private bool _isClassChangingNotificationEnabled = true;
     private bool _isClassPrepareNotificationEnabled = true;
     private int _windowDockingLocation = 1;
@@ -61,11 +57,10 @@ public class Settings : ObservableRecipient, ILessonControlSettings, INotificati
     private int _multiWeekRotationMaxCycle = 4;
 
     private bool _hideOnMaxWindow = false;
-    private double _opacity = 0.5;
+    private double _opacity = 1.0;
     private bool _isDebugEnabled = false;
     private string _selectedProfile = "Default.json";
     private bool _isMainWindowVisible = true;
-    private bool _isWelcomeWindowShowed = false;
     private bool _isReportingEnabled = true;
     private Dictionary<string, string> _releaseChannels = new()
     {
@@ -163,25 +158,11 @@ public class Settings : ObservableRecipient, ILessonControlSettings, INotificati
     private Version _lastAppVersion = new Version("0.0.0.0");
     private bool _showComponentsMigrateTip = false;
     private bool _expAllowEditingActivatedTimeLayout = false;
-    private ObservableDictionary<string, string> _pluginIndexSelectedMirrors = new();
-    private ObservableCollection<string> _userPluginIndexes = new();
-    private ObservableDictionary<string, string> _additionalPluginIndexes = new();
-    private ObservableCollection<PluginIndexInfo> _pluginIndexes = new();
-    private string _officialSelectedMirror = "github";
-    private ObservableDictionary<string, string> _officialIndexMirrors = new()
-    {
-        { "github", "https://github.com" },
-        { "ghproxy", "https://mirror.ghproxy.com/https://github.com" },
-        { "moeyy", "https://github.moeyy.xyz/https://github.com" }
-    };
-    private bool _ignoreSslForPluginMirrors = false;
-
     private bool _isMigratedFromv14 = false;
-    private DateTime _lastRefreshPluginSourceTime = DateTime.MinValue;
     private bool _isProfileEditorClassInfoSubjectAutoMoveNextEnabled = true;
     private double _notificationSoundVolume = 1.0;
-    private double _radiusX = 8.0;
-    private double _radiusY = 8.0;
+    private double _radiusX = 0.0;
+    private double _radiusY = 0.0;
     private int _hideMode = 0;
     private Ruleset _hideRules = new();
     private bool _isAutoBackupEnabled = true;
@@ -201,7 +182,6 @@ public class Settings : ObservableRecipient, ILessonControlSettings, INotificati
     private bool _isErrorLoadingRawInput = false;
     private bool _isCustomForegroundColorEnabled = false;
     private Color _customForegroundColor = Colors.DodgerBlue;
-    private bool _isPluginMarketWarningVisible = true;
     private bool _isTransientDisabled = false;
     private bool _isWaitForTransientDisabled = false;
     private bool _isCriticalSafeMode = false;
@@ -216,7 +196,6 @@ public class Settings : ObservableRecipient, ILessonControlSettings, INotificati
     private string _selectedUpdateMirrorV2 = "main";
     private string _selectedUpdateChannelV2 = "stable";
     private GptSoVitsSpeechSettings _gptSoVitsSpeechSettings = new();
-    private double _mainWindowLineVerticalMargin = 5;
     private ObservableCollection<Guid> _trustedProfileIds = [];
     private bool _isNonExactCountdownEnabled = false;
     private bool _showDetailedStatusOnSplash = false;
@@ -245,17 +224,6 @@ public class Settings : ObservableRecipient, ILessonControlSettings, INotificati
         {
             if (value == _isMainWindowVisible) return;
             _isMainWindowVisible = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public bool IsWelcomeWindowShowed
-    {
-        get => _isWelcomeWindowShowed;
-        set
-        {
-            if (value == _isWelcomeWindowShowed) return;
-            _isWelcomeWindowShowed = value;
             OnPropertyChanged();
         }
     }
@@ -336,6 +304,24 @@ public class Settings : ObservableRecipient, ILessonControlSettings, INotificati
             _singleWeekStartTime = value;
             OnPropertyChanged();
         }
+    }
+
+    /// <summary>
+    /// 学期开始时间默认值迁移标记。旧配置（0）会在加载时把默认值按系统时间重算一次，
+    /// 之后（1）完全尊重用户在设置页的选择。
+    /// </summary>
+    public int SemesterStartTimeDefaultVersion { get; set; } = 0;
+
+    /// <summary>
+    /// 未进行设置时，根据当前系统日期给出默认学期开始时间：
+    /// 3~8 月（春季学期）取当年 3 月 1 日；9 月~次年 2 月（秋季学期）取 9 月 1 日。
+    /// </summary>
+    public static DateTime GetDefaultSemesterStartTime()
+    {
+        var today = DateTime.Today;
+        return today.Month is >= 3 and <= 8
+            ? new DateTime(today.Year, 3, 1)
+            : new DateTime(today.Month >= 9 ? today.Year : today.Year - 1, 9, 1);
     }
 
     public ObservableCollection<int> MultiWeekRotationOffset
@@ -825,28 +811,6 @@ public class Settings : ObservableRecipient, ILessonControlSettings, INotificati
         }
     }
 
-    public bool AutoDisableCorruptPlugins
-    {
-        get => _autoDisableCorruptPlugins;
-        set
-        {
-            if (value == _autoDisableCorruptPlugins) return;
-            _autoDisableCorruptPlugins = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public bool CorruptPluginsDisabledLastSession
-    {
-        get => _corruptPluginsDisabledLastSession;
-        set
-        {
-            if (value == _corruptPluginsDisabledLastSession) return;
-            _corruptPluginsDisabledLastSession = value;
-            OnPropertyChanged();
-        }
-    }
-
     public bool ReduceProgressAccuracy
     {
         get => _reduceProgressAccuracy;
@@ -1272,25 +1236,30 @@ public class Settings : ObservableRecipient, ILessonControlSettings, INotificati
         }
     }
 
-    public double MainWindowLineVerticalMargin
+    /// <summary>
+    /// 主界面颜色：入场动画中后进入并停留的色块颜色，同时作为主界面背景色。
+    /// </summary>
+    public Color MainWindowCurtainColor
     {
-        get => _mainWindowLineVerticalMargin;
+        get => _mainWindowCurtainColor;
         set
         {
-            if (value.Equals(_mainWindowLineVerticalMargin)) return;
-            _mainWindowLineVerticalMargin = value;
+            if (value.Equals(_mainWindowCurtainColor)) return;
+            _mainWindowCurtainColor = value;
             OnPropertyChanged();
         }
     }
 
-    [SettingsInfo("分体主界面", "\uf023", order: 1)]
-    public bool IsIslandSeperated
+    /// <summary>
+    /// 主界面字体颜色。
+    /// </summary>
+    public Color MainWindowFontColor
     {
-        get => _isIslandSeperated;
+        get => _mainWindowFontColor;
         set
         {
-            if (value == _isIslandSeperated) return;
-            _isIslandSeperated = value;
+            if (value.Equals(_mainWindowFontColor)) return;
+            _mainWindowFontColor = value;
             OnPropertyChanged();
         }
     }
@@ -1841,26 +1810,19 @@ public class Settings : ObservableRecipient, ILessonControlSettings, INotificati
     private bool _autoRefreshWeatherLocation = false;
     private bool _noTLSWeatherRequests = false;
     private bool _useExperimentColorPickingMethod = false;
-    private bool _autoDisableCorruptPlugins = true;
-    private bool _corruptPluginsDisabledLastSession = false;
     private ObservableDictionary<string, NotificationSettings> _notificationChannelsNotifySettings = new();
     private string _selectedSpeechProvider = "classisland.speech.edgeTts";
-    private bool _isThemeWarningVisible = true;
     private string _weatherIconId = "classisland.weatherIcons.lucide";
     private bool _isRollingComponentWarningVisible = true;
     private int _animationLevel = 1;
-    private bool _isIslandSeperated = false;
     private bool _reduceProgressAccuracy = true;
     private Guid _selectedUpdateChannelV3 = Guid.Empty;
     private string _debugSubChannelOverride = "";
     private string _debugPublicKeyOverride = "";
     private string _debugPhainonRootUrlOverride = "";
-    private bool _isPluginsAutoUpdateEnabled = true;
-    private bool _isPluginsUpdateNotificationEnabled = true;
     private int _windowTopmostRecheckMode = 0;
     private bool _isScreenRecordingModeEnabled = false;
     private bool _isWindowCaptureBlockingEnabled = false;
-    private bool _hasEditModeTutorialShown = false;
     private int _classPlanEditModeIndex = 1;
     private bool _isRefreshingToastEnabled = true;
     private int _refreshingToastThresholdDays = 20;
@@ -1872,7 +1834,6 @@ public class Settings : ObservableRecipient, ILessonControlSettings, INotificati
     private DateTime _appLastStartedTime = DateTime.Now;
     private int _maxRefreshingToastCounts = 5;
     private RefreshingScopes _refreshingScopes = new();
-    private bool _isThemeSeparateInfoVisible = true;
 
     public bool IsIgnoreWorkAreaEnabled
     {
@@ -2285,98 +2246,6 @@ public class Settings : ObservableRecipient, ILessonControlSettings, INotificati
 
     #endregion
 
-    #region Plugins
-
-    public ObservableDictionary<string, string> OfficialIndexMirrors
-    {
-        get => _officialIndexMirrors;
-        set
-        {
-            if (Equals(value, _officialIndexMirrors)) return;
-            _officialIndexMirrors = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public string OfficialSelectedMirror
-    {
-        get => _officialSelectedMirror;
-        set
-        {
-            if (value == _officialSelectedMirror) return;
-            _officialSelectedMirror = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public ObservableCollection<PluginIndexInfo> PluginIndexes
-    {
-        get => _pluginIndexes;
-        set
-        {
-            if (Equals(value, _pluginIndexes)) return;
-            _pluginIndexes = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public bool IgnoreSslForPluginMirrors
-    {
-        get => _ignoreSslForPluginMirrors;
-        set
-        {
-            if (value == _ignoreSslForPluginMirrors) return;
-            _ignoreSslForPluginMirrors = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public DateTime LastRefreshPluginSourceTime
-    {
-        get => _lastRefreshPluginSourceTime;
-        set
-        {
-            if (value.Equals(_lastRefreshPluginSourceTime)) return;
-            _lastRefreshPluginSourceTime = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public bool IsPluginMarketWarningVisible
-    {
-        get => _isPluginMarketWarningVisible;
-        set
-        {
-            if (value == _isPluginMarketWarningVisible) return;
-            _isPluginMarketWarningVisible = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public bool IsPluginsAutoUpdateEnabled
-    {
-        get => _isPluginsAutoUpdateEnabled;
-        set
-        {
-            if (value == _isPluginsAutoUpdateEnabled) return;
-            _isPluginsAutoUpdateEnabled = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public bool IsPluginsUpdateNotificationEnabled
-    {
-        get => _isPluginsUpdateNotificationEnabled;
-        set
-        {
-            if (value == _isPluginsUpdateNotificationEnabled) return;
-            _isPluginsUpdateNotificationEnabled = value;
-            OnPropertyChanged();
-        }
-    }
-
-    #endregion
-
     public bool IsRollingComponentWarningVisible
     {
         get => _isRollingComponentWarningVisible;
@@ -2384,29 +2253,6 @@ public class Settings : ObservableRecipient, ILessonControlSettings, INotificati
         {
             if (value == _isRollingComponentWarningVisible) return;
             _isRollingComponentWarningVisible = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public bool IsThemeWarningVisible
-    {
-        get => _isThemeWarningVisible;
-        set
-        {
-            if (value == _isThemeWarningVisible) return;
-            _isThemeWarningVisible = value;
-            OnPropertyChanged();
-        }
-    }
-
-
-    public bool IsThemeSeparateInfoVisible
-    {
-        get => _isThemeSeparateInfoVisible;
-        set
-        {
-            if (value == _isThemeSeparateInfoVisible) return;
-            _isThemeSeparateInfoVisible = value;
             OnPropertyChanged();
         }
     }
@@ -2628,17 +2474,6 @@ public class Settings : ObservableRecipient, ILessonControlSettings, INotificati
                 IAppHost.GetService<ILogger<Settings>>().LogError(ex, "无法设置 ShowSellingAnnouncement 启用状态。");
             }
 
-        }
-    }
-
-    public bool HasEditModeTutorialShown
-    {
-        get => _hasEditModeTutorialShown;
-        set
-        {
-            if (value == _hasEditModeTutorialShown) return;
-            _hasEditModeTutorialShown = value;
-            OnPropertyChanged();
         }
     }
 

@@ -15,6 +15,4 @@ enum AuditEvents {
   AppCrashed = 9;
   AppStarted = 10;
   AppExited = 11;
-  PluginInstalled = 12;
-  PluginUninstalled = 13;
 }

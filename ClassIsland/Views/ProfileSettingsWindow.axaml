@@ -1,4 +1,4 @@
-<ci:MyWindow xmlns="https://github.com/avaloniaui"
+<UserControl xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -20,21 +20,15 @@
         xmlns:profile2="clr-namespace:ClassIsland.Models.Profile"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="ClassIsland.Views.ProfileSettingsWindow"
-        Title="档案编辑"
-        EnableMicaWindow="True"
         d:DataContext="{d:DesignInstance views:ProfileSettingsWindow}"
-        Icon="/Assets/AppLogo.ico"
-        MinWidth="750"
-        Width="1100" Height="600"
-        Closing="Window_OnClosing"
         Loaded="Control_OnLoaded">
     <input:CommandManager.CommandBindings>
         <input:CommandBinding Command="{x:Static views:ProfileSettingsWindow.RemoveSelectedTimeLayoutItemCommand}"
                               Executed="CommandBindingRemoveTimePoint_OnExecuted"/>
     </input:CommandManager.CommandBindings>
-    <ci:MyWindow.DataTemplates>
-    </ci:MyWindow.DataTemplates>
-    <ci:MyWindow.Resources>
+    <UserControl.DataTemplates>
+    </UserControl.DataTemplates>
+    <UserControl.Resources>
         <ci:CustomKeyDictionaryValueConverter x:TypeArguments="system:Guid, profile:Subject"
                                               x:Key="SubjectIdToSubjectConverter"/>
         <ci:CustomKeyDictionaryValueConverter x:TypeArguments="system:Guid, profile:ClassPlanGroup"
@@ -489,7 +483,7 @@
                         Click="ButtonDeleteSelectedClassPlan_OnClick" />
             </StackPanel>
         </Flyout>
-    </ci:MyWindow.Resources>
+    </UserControl.Resources>
     <ci:DrawerHost DrawerPlacement="Right"
                IsDrawerOpen="{Binding ViewModel.IsDrawerOpen, Mode=TwoWay}"
                DrawerContent="{Binding ViewModel.DrawerContent, Mode=OneWay}">
@@ -500,7 +494,7 @@
                     HorizontalAlignment="Stretch" />
 
             <TabControl Grid.Row="0" Grid.RowSpan="2" Grid.Column="0" Grid.ColumnSpan="2"  
-                        Padding="0" Classes="navigation barrier"
+                        Padding="0" Classes="navigation"
                         SelectionChanged="MasterTabControl_OnSelectionChanged"
                         x:Name="MasterTabControl"
                         SelectedIndex="{Binding ViewModel.MasterPageTabSelectIndex}">
@@ -511,7 +505,7 @@
                 </TabControl.Styles>
                 <TabItem Header="课表" Classes="tag-ClassPlans"
                          IsVisible="{Binding !ViewModel.ManagementService.Policy.DisableProfileEditing}">
-                    <TabControl TabStripPlacement="Bottom" Classes="compact barrier" Padding="0" 
+                    <TabControl TabStripPlacement="Bottom" Classes="compact" Padding="0" 
                                 SelectedIndex="{Binding ViewModel.SettingsService.Settings.ClassPlanEditModeIndex}">
                         <TabItem Header="{ci:FluentIcon &#xE075;}" ToolTip.Tip="列表视图">
                             <Grid>
@@ -522,7 +516,7 @@
                                 </Grid.ColumnDefinitions>
                                 <!-- 课表选择区域 -->
                                 <Grid Grid.Column="0" RowDefinitions="Auto, *">
-                                    <ci:TutorialBarrier>
+                                    <ci:ContentBarrier>
                                         <controls:CommandBar Grid.Row="0"
                                                              DefaultLabelPosition="Right"
                                                              IsEnabled="{Binding !ViewModel.ManagementService.Policy.DisableProfileClassPlanEditing}">
@@ -536,7 +530,7 @@
                                                                            Click="ButtonDuplicateClassPlan_OnClick" />
                                             </controls:CommandBar.PrimaryCommands>
                                         </controls:CommandBar>
-                                    </ci:TutorialBarrier>
+                                    </ci:ContentBarrier>
 
                                     <TreeView Grid.Row="1"
                                               x:Name="ClassPlansTreeView"
@@ -709,7 +703,7 @@
                                               IsDirectContentMode="True"
                                               IsEnabled="{Binding !ViewModel.ManagementService.Policy.DisableProfileClassPlanEditing}">
                                     <Grid Grid.Column="2" RowDefinitions="Auto,*,Auto">
-                                        <ci:TutorialBarrier Grid.Row="0">
+                                        <ci:ContentBarrier Grid.Row="0">
                                             <controls:CommandBar DefaultLabelPosition="Right"
                                                                  Classes="hide-popup-indicator">
                                                 <controls:CommandBar.PrimaryCommands>
@@ -737,7 +731,7 @@
                                                         Flyout="{StaticResource DeleteClassPlanConfirmFlyout}" />
                                                 </controls:CommandBar.PrimaryCommands>
 
-                                            </controls:CommandBar></ci:TutorialBarrier>
+                                            </controls:CommandBar></ci:ContentBarrier>
 
                                         <!-- 课表编辑 -->
                                         <Grid Grid.Row="1"
@@ -930,7 +924,7 @@
                                     <ColumnDefinition Width="300" MinWidth="300" MaxWidth="450" />
                                 </Grid.ColumnDefinitions>
 
-                                <ci:TutorialBarrier>
+                                <ci:ContentBarrier>
                                     <controls:CommandBar Grid.Column="0" Grid.ColumnSpan="3"
                                                          Grid.Row="0" DefaultLabelPosition="Right"
                                                          Margin="0 -4 0 -4"
@@ -989,11 +983,10 @@
                                                                        IsVisible="{Binding ViewModel.SelectedClassPlan, Converter={x:Static ObjectConverters.IsNotNull}}" />
                                         </controls:CommandBar.PrimaryCommands>
 
-                                    </controls:CommandBar></ci:TutorialBarrier>
+                                    </controls:CommandBar></ci:ContentBarrier>
                                  
                                 <scheduleDataGrid:ScheduleDataGrid Grid.Row="1" Grid.Column="0"
                                                                    x:Name="ScheduleDataGrid"
-                                                                   TutorialContextId="profileSettingsWindow.classPlans"
                                                                    IsReadonly="{Binding ViewModel.ManagementService.Policy.DisableProfileClassPlanEditing}"
                                                                    OpenClassPlanSettingsRequested="ScheduleDataGrid_OnOpenClassPlanSettingsRequested"
                                                                    SelectedClassInfo="{Binding ViewModel.SelectedClassInfo, Mode=TwoWay}"
@@ -1052,7 +1045,7 @@
                         </TabItem>
                         <TabItem Header="{ci:FluentIcon &#xE304;}" ToolTip.Tip="月视图">
                             <Grid RowDefinitions="Auto *">
-                                <ci:TutorialBarrier>
+                                <ci:ContentBarrier>
                                     <controls:CommandBar Grid.Column="0"
                                                          Grid.Row="0" DefaultLabelPosition="Right"
                                                          Margin="0 -4 0 -4"
@@ -1066,7 +1059,7 @@
                                         </controls:CommandBar.PrimaryCommands>
 
                                     </controls:CommandBar>
-                                </ci:TutorialBarrier>
+                                </ci:ContentBarrier>
                                 <controls1:ScheduleCalendarControl x:Name="ScheduleCalendarControl2"
                                                                    Grid.Row="1"
                                                                    DisplayDate="{Binding ViewModel.ScheduleCalendarSelectedDate, Mode=TwoWay}"
@@ -1087,7 +1080,7 @@
                         <!-- 时间表选择 -->
                         <Grid Grid.Column="0" Margin="0 0 3 0" RowDefinitions="Auto,*,Auto">
                             <!-- 时间表操作 -->
-                            <ci:TutorialBarrier Grid.Row="0" ExcludedTags="classisland.profileSettingsWindow.timeLayouts.add">
+                            <ci:ContentBarrier Grid.Row="0">
                                 <controls:CommandBar DefaultLabelPosition="Right"
                                                      IsEnabled="{Binding ViewModel.ManagementService.Policy.DisableProfileTimeLayoutEditing, Converter={StaticResource InvertBooleanConverter}}">
                                     <controls:CommandBar.PrimaryCommands>
@@ -1103,10 +1096,10 @@
                                                                    Label="复制" />
                                     </controls:CommandBar.PrimaryCommands>
                                 </controls:CommandBar>
-                            </ci:TutorialBarrier>
+                            </ci:ContentBarrier>
 
                             <!-- 时间表 -->
-                            <ci:TutorialBarrier Grid.Row="1">
+                            <ci:ContentBarrier Grid.Row="1">
                                 <ListBox SelectionMode="Single"
                                          ItemsSource="{Binding ViewModel.TimeLayouts.List, Mode=OneWay}"
                                          SelectedValue="{Binding ViewModel.SelectedTimeLayout, Mode=TwoWay}"
@@ -1122,7 +1115,7 @@
                                         </DataTemplate>
                                     </ListBox.ItemTemplate>
                                 </ListBox>
-                            </ci:TutorialBarrier>
+                            </ci:ContentBarrier>
 
                             <!-- 时间点时长 -->
                             <Expander HorizontalAlignment="Stretch"
@@ -1160,8 +1153,7 @@
                                     <ColumnDefinition Width="375" MinWidth="250" MaxWidth="450"/>
                                 </Grid.ColumnDefinitions>
 
-                                <ci:TutorialBarrier Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="3"
-                                                    ExcludedTags="classisland.profileSettingsWindow.timeLayouts.timePoints.add">
+                                <ci:ContentBarrier Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="3">
                                     <controls:CommandBar DefaultLabelPosition="Right"
                                                          IsEnabled="{Binding !$parent[views:ProfileSettingsWindow].ViewModel.ManagementService.Policy.DisableProfileTimeLayoutEditing}"
                                                          Classes="hide-popup-indicator">
@@ -1268,9 +1260,9 @@
                                             </controls:CommandBarButton>
                                         </controls:CommandBar.PrimaryCommands>
                                     </controls:CommandBar>
-                                </ci:TutorialBarrier>
+                                </ci:ContentBarrier>
                                 
-                                <TabControl Grid.Row="2" Grid.Column="0" Grid.RowSpan="2" Classes="compact barrier"
+                                <TabControl Grid.Row="2" Grid.Column="0" Grid.RowSpan="2" Classes="compact"
                                             Padding="0"
                                             SelectedIndex="{Binding $parent[views:ProfileSettingsWindow].ViewModel.SettingsService.Settings.TimeLayoutEditorIndex, Mode=TwoWay}"
                                             TabStripPlacement="Bottom">
@@ -1874,7 +1866,6 @@
 
                                     <scheduleDataGrid:ScheduleDataGrid Grid.Row="1" Grid.Column="0"
                                                                        x:Name="ScheduleDataGridAdjustment"
-                                                                       TutorialContextId="profileSettingsWindow.adjustment"
                                                                        IsReadonly="True"
                                                                        SelectedClassInfo="{Binding ViewModel.SelectedClassInfo, Mode=TwoWay}"
                                                                        SelectedClassInfoIndex="{Binding ViewModel.SelectedClassIndex2, Mode=TwoWay}"
@@ -1949,7 +1940,7 @@
             </TabControl>
 
             <!-- 信息栏 -->
-            <ci:TutorialBarrier Grid.Column="1" Grid.Row="0" >
+            <ci:ContentBarrier Grid.Column="1" Grid.Row="0" >
                 <controls:CommandBar HorizontalAlignment="Right"
                                      DefaultLabelPosition="Right"
                                      Classes="tag-InfoBar">
@@ -1998,7 +1989,7 @@
                                                    CommandParameter="https://docs.classisland.tech/app/profile/"
                                                    ToolTip.Tip="查看档案编辑器帮助" />
                     </controls:CommandBar.PrimaryCommands>
-                </controls:CommandBar></ci:TutorialBarrier>
+                </controls:CommandBar></ci:ContentBarrier>
         </Grid>
     </ci:DrawerHost>
-</ci:MyWindow>
+</UserControl>

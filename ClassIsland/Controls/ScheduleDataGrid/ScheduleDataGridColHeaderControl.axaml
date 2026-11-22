@@ -49,14 +49,14 @@
                                    ClipToBounds="False"/>
                     </StackPanel>
                     <StackPanel Grid.Column="1" Grid.Row="2" Margin="0 -4 -4 -4" Orientation="Horizontal">
-                        <ci:TutorialBarrier ExcludedTags="classisland.sdg.header.settings.open">
+                        <ci:ContentBarrier>
                             <Button Theme="{StaticResource TransparentButton}"
                                     IsVisible="{Binding !$parent[controls:ScheduleDataGrid].IsReadonly}"
                                     Content="{ci:FluentIcon &#xEF27;}"
                                     x:Name="PART_ButtonOpenClassPlanSettings"
                                     ToolTip.Tip="课表信息…"
                                     Padding="8 4" />
-                        </ci:TutorialBarrier>
+                        </ci:ContentBarrier>
                     </StackPanel>
                 </Grid>
             </ControlTemplate>
@@ -68,7 +68,7 @@
                         <TextBlock Grid.Row="0" Text="{Binding Date, RelativeSource={RelativeSource TemplatedParent}, StringFormat='ddd'}"/>
                         <TextBlock Grid.Row="0" Text="{Binding Date, RelativeSource={RelativeSource TemplatedParent}, StringFormat='MM/dd'}"
                                    HorizontalAlignment="Right"/>
-                        <ci:TutorialBarrier Grid.Row="1" ExcludedTags="classisland.sdg.header.creationPopup.open,classisland.sdg.header.creationPopup.complete">
+                        <ci:ContentBarrier Grid.Row="1">
                             <Button HorizontalAlignment="Stretch" VerticalAlignment="Center"
                                     x:Name="PART_ButtonCreateClassPlan"
                                     IsVisible="{Binding !$parent[controls:ScheduleDataGrid].IsReadonly}">
@@ -136,7 +136,7 @@
                                     </Flyout>
                                 </Button.Flyout>
                                 <ci:IconText Glyph="&#xE00D;" Text="新课表" />
-                            </Button></ci:TutorialBarrier>
+                            </Button></ci:ContentBarrier>
                         
                     </Grid>
                 </ControlTemplate>

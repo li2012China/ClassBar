@@ -48,9 +48,8 @@ using Sentry;
 
 namespace ClassIsland.Views;
 
-public partial class ProfileSettingsWindow : MyWindow
+public partial class ProfileSettingsWindow : UserControl
 {
-    private bool _isOpen = false;
     private record UndoEntry(bool IsAdd, TimeLayoutItem Item, TimeLayout Layout, int Index, string Description);
     private readonly Stack<UndoEntry> _undoStack = new();
     private readonly Stack<UndoEntry> _redoStack = new();
@@ -97,7 +96,7 @@ public partial class ProfileSettingsWindow : MyWindow
     private void OnGlobalUndoRedoKeyDown(object? sender, KeyEventArgs e)
     {
         // 焦点位于文本输入框时，保留其自身的撤销/重做行为
-        if (FocusManager?.GetFocusedElement() is TextBox)
+        if (TopLevel.GetTopLevel(this)?.FocusManager?.GetFocusedElement() is TextBox)
             return;
         switch (e.Key)
         {
@@ -168,10 +167,6 @@ public partial class ProfileSettingsWindow : MyWindow
 
     private void OnDrawerStateChanged()
     {
-        if (!ViewModel.IsDrawerOpen)
-        {
-            ViewModel.TutorialService.PushToNextSentenceByTag("classisland.profileSettingsWindow.drawer.close");
-        }
     }
 
     public void OpenDrawer(string key)
@@ -183,59 +178,9 @@ public partial class ProfileSettingsWindow : MyWindow
         }
     }
 
-    public async void Open(Uri? uri = null)
+    public void Open(Uri? uri = null)
     {
-        if (!_isOpen)
-        {
-            if (!await ViewModel.ManagementService.AuthorizeByLevel(ViewModel.ManagementService.CredentialConfig
-                    .EditProfileAuthorizeLevel))
-            {
-                return;
-            }
-
-            SentrySdk.Metrics.EmitCounter("views.ProfileSettingsWindow.open", 1);
-            _isOpen = true;
-            Show();
-            if (ViewModel.ManagementService.Policy is
-                {
-                    DisableProfileEditing: false, DisableProfileClassPlanEditing: false,
-                    DisableProfileSubjectsEditing: false, DisableProfileTimeLayoutEditing: false
-                })
-            {
-                Dispatcher.UIThread.Post(() =>
-                {
-                    if (ViewModel.ProfileService.Profile.TimeLayouts.Count > 0)
-                    {
-                        if (ViewModel.ProfileService.Profile.ClassPlans.Count <= 0)
-                        {
-                            ViewModel.TutorialService.BeginNotCompletedTutorials("classisland.getStarted.profileEditing/setup-classplans");
-                        }
-                        if (!ViewModel.ProfileService.Profile.ClassPlans.Any(x => x.Value.TimeRule.WeekCountDiv > 0)
-                            && ViewModel.ProfileService.Profile.ClassPlans.Count > 0)
-                        {
-                            ViewModel.TutorialService.BeginNotCompletedTutorials("classisland.getStarted.profileEditing/multiweek-classplans");
-                        }
-                    }
-                    else
-                    {
-                        ViewModel.TutorialService.BeginNotCompletedTutorials(
-                            "classisland.getStarted.profileEditing/concepts",
-                            "classisland.getStarted.profileEditing/setup-timeLayout");
-                    }
-                });
-            }
-        }
-        else
-        {
-            if (WindowState == WindowState.Minimized)
-            {
-                WindowState = WindowState.Normal;
-            }
-
-            Activate();
-        }
-        
-        ViewModel.TutorialService.PushToNextSentenceByTag("classisland.profileSettingsWindow.open");
+        SentrySdk.Metrics.EmitCounter("views.ProfileSettingsWindow.open", 1);
 
         if (uri == null || uri.Segments.Length < 3)
         {
@@ -243,7 +188,7 @@ public partial class ProfileSettingsWindow : MyWindow
         }
 
         var page = uri.Segments[2];
-        ViewModel.MasterPageTabSelectIndex = page.ToLower() switch 
+        ViewModel.MasterPageTabSelectIndex = page.ToLower() switch
         {
             "classplans" when !ViewModel.ManagementService.Policy.DisableProfileEditing => 0,
             "timelayouts" when !ViewModel.ManagementService.Policy.DisableProfileEditing => 1,
@@ -260,29 +205,9 @@ public partial class ProfileSettingsWindow : MyWindow
             _ => ViewModel.MasterPageTabSelectIndex
         };
     }
-
-    private void Window_OnClosing(object? sender, WindowClosingEventArgs e)
-    {
-        if (e.CloseReason is WindowCloseReason.ApplicationShutdown or WindowCloseReason.OSShutdown)
-        {
-            return;
-        }
-        e.Cancel = true;
-        _isOpen = false;
-        ViewModel.ProfileService.SaveProfile();
-        Hide();
-    }
     
     private void MasterTabControl_OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
-        Dispatcher.UIThread.Post(() =>
-        {
-            if (ViewModel.MasterPageTabSelectIndex == 0 && ViewModel.ProfileService.Profile.TimeLayouts.Count > 0
-                                                        && ViewModel.ProfileService.Profile.ClassPlans.Count <= 0)
-            {
-                ViewModel.TutorialService.BeginNotCompletedTutorials("classisland.getStarted.profileEditing/setup-classplans");
-            }
-        });
     }
     
     private void ButtonHelp_OnClick(object? sender, RoutedEventArgs e)
@@ -581,7 +506,7 @@ public partial class ProfileSettingsWindow : MyWindow
             return;
         }
         details.ViewModel.ClassPlan = ViewModel.SelectedClassPlan;
-        _ = details.ShowDialog(this);
+        _ = details.ShowDialog((Window)TopLevel.GetTopLevel(this)!);
     }
     
     private void UpdateClassPlanInfoEditorTimeLayoutComboBox()
@@ -827,7 +752,6 @@ public partial class ProfileSettingsWindow : MyWindow
         OpenDrawer("TimeLayoutInfoEditor");
         ViewModel.SelectedTimeLayout = timeLayout;
         SentrySdk.Metrics.EmitCounter("views.ProfileSettingsWindow.timeLayout.create", 1);
-        ViewModel.TutorialService.PushToNextSentence("classisland.getStarted.profileEditing/setup-timeLayout");
     }
     
     private void ButtonDuplicateTimeLayout_OnClick(object sender, RoutedEventArgs e)
@@ -1095,7 +1019,6 @@ public partial class ProfileSettingsWindow : MyWindow
             new KeyValuePair<string, object>("Auto", "False")
         ]
         );
-        ViewModel.TutorialService.PushToNextSentence();
     }
 
     
@@ -1607,7 +1530,7 @@ public partial class ProfileSettingsWindow : MyWindow
 
         if (info.FunctionHandler != null)
         {
-            info.FunctionHandler(this);
+            info.FunctionHandler(TopLevel.GetTopLevel(this)!);
             return;
         }
 

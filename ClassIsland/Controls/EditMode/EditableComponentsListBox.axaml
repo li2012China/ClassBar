@@ -54,7 +54,7 @@
                         <ItemsPresenter ItemsPanel="{TemplateBinding ItemsPanel}" />
                         <Button Height="32"
                                 x:Name="ButtonAddComponent"
-                                IsVisible="{Binding $self.(ci:MainWindowStylesAssist.MainWindowInEditMode)}"
+                                IsVisible="False"
                                 Command="{Binding $parent[controls1:EditableComponentsListBox].InvokeRequestAddComponentCommand}"
                                 Content="{ci:FluentIcon &#xE00D;, FontSize=20}">
                         </Button>
@@ -83,13 +83,6 @@
                                                  x:Key="ParentBindingProxy"
                                                  Data="{Binding $parent[controls1:EditableComponentsListBox]}"/>
                             </controls2:AdornerAttachHostControl.Resources>
-                            <controls2:AdornerAttachHostControl.IsAttached>
-                                <MultiBinding Converter="{x:Static BoolConverters.And}">
-                                    <TemplateBinding Property="IsSelected"/>
-                                    <Binding Path="$self.(ci:MainWindowStylesAssist.MainWindowInEditMode)"/>
-                                    <Binding Path="!$parent[controls1:EditableComponentsListBox].IsDragging"/>
-                                </MultiBinding>
-                            </controls2:AdornerAttachHostControl.IsAttached>
                             <controls2:AdornerAttachHostControl.AdornerTemplate>
                                 <ControlTemplate>
                                     <Panel Margin="-9999 -46 -9999 46" 
@@ -97,7 +90,7 @@
                                            x:DataType="components:ComponentSettings">
                                         <Panel.Resources>
                                         </Panel.Resources>
-                                        <ci:TutorialBarrier ExcludedTags="classisland.mainwindow.editMode.childrenComponent.open,classisland.mainwindow.editMode.componentSettings.open,classisland.mainwindow.editMode.component.delete">
+                                        <ci:ContentBarrier>
                                             <Border HorizontalAlignment="Center" VerticalAlignment="Bottom"
                                                     Margin="0 0 0 0"
                                                     Background="{DynamicResource CommandBarOverflowPresenterBackground}"
@@ -182,7 +175,7 @@
                                                     </Button>
                                                 </StackPanel>
                                             </Border>
-                                        </ci:TutorialBarrier>
+                                        </ci:ContentBarrier>
                                     </Panel>
                                 </ControlTemplate>
                             </controls2:AdornerAttachHostControl.AdornerTemplate>
@@ -214,14 +207,8 @@
                                                   IsHitTestVisible="False">
                                 </ContentPresenter>
                                 
-                                <Panel x:Name="ContainerIndicatorPanel">
-                                    <Panel.IsVisible>
-                                        <MultiBinding Converter="{x:Static BoolConverters.And}">
-                                            <Binding Path="$self.(ci:MainWindowStylesAssist.MainWindowInEditMode)"/>
-                                            <Binding Path="AssociatedComponentInfo.IsComponentContainer"/>
-                                            <TemplateBinding Property="IsSelected" Converter="{x:Static BoolConverters.Not}"/>
-                                        </MultiBinding>
-                                    </Panel.IsVisible>
+                                <!-- 主界面编辑功能已删除，容器/选中虚线指示框不再显示 -->
+                                <Panel x:Name="ContainerIndicatorPanel" IsVisible="False">
                                     <Rectangle HorizontalAlignment="Stretch"
                                                VerticalAlignment="Stretch"
                                                x:Name="ContainerIndicator"
@@ -233,13 +220,8 @@
                                                Margin="2 0"
                                                StrokeDashArray="1, 1.5" />
                                 </Panel>
-                                <Panel x:Name="SelectedPanel">
-                                    <Panel.IsVisible>
-                                        <MultiBinding Converter="{x:Static BoolConverters.And}">
-                                            <TemplateBinding Property="IsSelected"/>
-                                            <Binding Path="$self.(ci:MainWindowStylesAssist.MainWindowInEditMode)"/>
-                                        </MultiBinding>
-                                    </Panel.IsVisible>
+                                <!-- 主界面编辑功能已删除，选中虚线框不再显示 -->
+                                <Panel x:Name="SelectedPanel" IsVisible="False">
                                     <Rectangle HorizontalAlignment="Stretch"
                                                VerticalAlignment="Stretch"
                                                x:Name="SelectionBorder"
@@ -254,7 +236,7 @@
                                     <Panel.IsVisible>
                                         <MultiBinding Converter="{x:Static BoolConverters.And}">
                                             <TemplateBinding Property="IsSelected"/>
-                                            <Binding Path="$self.(ci:MainWindowStylesAssist.MainWindowInEditMode)"/>
+                                            <Binding Source="False"/>
                                         </MultiBinding>
                                     </Panel.IsVisible>
                                     <ci:TouchDragThumb HorizontalAlignment="Stretch"

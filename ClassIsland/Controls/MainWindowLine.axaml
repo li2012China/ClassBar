@@ -29,21 +29,18 @@
     <Style Selector="controls|MainWindowLine">
         <Setter Property="IsVisible">
             <Setter.Value>
-                <MultiBinding Converter="{x:Static BoolConverters.Or}">
-                    <MultiBinding Converter="{x:Static BoolConverters.And}">
-                        <MultiBinding Converter="{StaticResource BooleanOrExpressionMultiConverter}">
-                            <Binding Path="!IsAllComponentsHid" RelativeSource="{RelativeSource Self}" />
-                            <Binding Path="IsOverlayOpen" RelativeSource="{RelativeSource Self}"/>
-                        </MultiBinding>
-                        <MultiBinding Converter="{x:Static BoolConverters.Or}">
-                            <MultiBinding Converter="{x:Static BoolConverters.And}">
-                                <Binding Path="Settings.HideOnRule" RelativeSource="{RelativeSource Self}"/>
-                                <Binding Path="Settings.IsVisible" RelativeSource="{RelativeSource Self}"/>
-                            </MultiBinding>
-                            <Binding Path="!Settings.HideOnRule" RelativeSource="{RelativeSource Self}"/>
-                        </MultiBinding>
+                <MultiBinding Converter="{x:Static BoolConverters.And}">
+                    <MultiBinding Converter="{StaticResource BooleanOrExpressionMultiConverter}">
+                        <Binding Path="!IsAllComponentsHid" RelativeSource="{RelativeSource Self}" />
+                        <Binding Path="IsOverlayOpen" RelativeSource="{RelativeSource Self}"/>
                     </MultiBinding>
-                    <Binding Path="(ci:MainWindowStylesAssist.MainWindowInEditMode)" RelativeSource="{RelativeSource Self}" />
+                    <MultiBinding Converter="{x:Static BoolConverters.Or}">
+                        <MultiBinding Converter="{x:Static BoolConverters.And}">
+                            <Binding Path="Settings.HideOnRule" RelativeSource="{RelativeSource Self}"/>
+                            <Binding Path="Settings.IsVisible" RelativeSource="{RelativeSource Self}"/>
+                        </MultiBinding>
+                        <Binding Path="!Settings.HideOnRule" RelativeSource="{RelativeSource Self}"/>
+                    </MultiBinding>
                 </MultiBinding>
             </Setter.Value>
         </Setter>
@@ -57,20 +54,22 @@
         <!--     <Setter Property="Margin" Value="{Binding ViewModel.Settings.MainWindowLineVerticalMargin, RelativeSource={RelativeSource AncestorType=classIsland:MainWindow}, Converter={x:Static controls:MainWindowLine.DoubleToThicknessTopConverter}}"/> -->
         <!-- </Style> -->
         
+        <!-- 主界面改为铺满屏幕顶部的整条色块，因此内部 docking 容器一律横向拉伸，
+             不再按 docking 位置左/中/右收缩（否则背景宽度会跟随内容宽度）。 -->
         <Style Selector="^:dock-left /template/:is(Control).docking">
-            <Setter Property="HorizontalAlignment" Value="Left" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
         </Style>
         <Style Selector="^:dock-center /template/ :is(Control).docking">
-            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
         </Style>
         <Style Selector="^:dock-right /template/ :is(Control).docking">
-            <Setter Property="HorizontalAlignment" Value="Right" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
         </Style>
         
         <Style Selector="^:pointerover">
             <Setter Property="PointerOver" Value="True"/>
         </Style>
-        <Style Selector="^[IsLineFaded=True][(ci|MainWindowStylesAssist.MainWindowInEditMode)=False]">
+        <Style Selector="^[IsLineFaded=True]">
             <Setter Property="Opacity" Value="0.05"/>
         </Style>
         

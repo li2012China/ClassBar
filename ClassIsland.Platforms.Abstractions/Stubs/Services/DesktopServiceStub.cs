@@ -10,11 +10,4 @@ public class DesktopServiceStub : IDesktopService
         get => false;
         set { }
     }
-
-    /// <inheritdoc />
-    public bool IsUrlSchemeRegistered
-    {
-        get => false;
-        set { }
-    }
 }

@@ -123,6 +123,21 @@
         <WriteLinesToFile File="$(PackageTypeFilePath)" Lines="@(PackageTypeFilePathWriteArgLine)" Overwrite="true"/>
     </Target>
     
+    <!-- SoundFlow 的 native 库在 publish 时会被平铺到输出根目录，而它的解析器只从
+         runtimes/<rid>/native/ 加载，这里在发布后补一份副本，避免运行时 DllNotFoundException。 -->
+    <Target Name="CopySoundFlowNativeToRuntimesFolder" AfterTargets="Publish"
+            Condition="'$(PublishDir)' != '' And '$(RuntimeIdentifier)' != ''">
+        <ItemGroup>
+            <_SoundFlowNative Include="$(PublishDir)libminiaudio.so" Condition="Exists('$(PublishDir)libminiaudio.so')"/>
+            <_SoundFlowNative Include="$(PublishDir)miniaudio.dll" Condition="Exists('$(PublishDir)miniaudio.dll')"/>
+            <_SoundFlowNative Include="$(PublishDir)libminiaudio.dylib" Condition="Exists('$(PublishDir)libminiaudio.dylib')"/>
+        </ItemGroup>
+        <Copy SourceFiles="@(_SoundFlowNative)"
+              DestinationFolder="$(PublishDir)runtimes\$(RuntimeIdentifier)\native"
+              SkipUnchangedFiles="true"/>
+        <Message Text="SoundFlow native 库已复制到 $(PublishDir)runtimes\$(RuntimeIdentifier)\native" Importance="high"/>
+    </Target>
+
     <Import Project="../Global.props"/>
     <Import Project="../AvaloniaShared.props"/>
     <Import Project="../CrossPlatformProps.props"/>

@@ -44,8 +44,4 @@ public partial class MainWindowLineSettings : ObservableObject, IMainWindowCusto
     [ObservableProperty] private bool _isVisible = true;
     [ObservableProperty] private bool _hideOnRule = false;
     [ObservableProperty] private Ruleset.Ruleset _hidingRules = new();
-    /// <summary>
-    /// 0 - 默认;1 - 禁用;2 - 启用
-    /// </summary>
-    [ObservableProperty] private int _islandSeparationMode = 0;
 }

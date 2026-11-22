@@ -43,7 +43,7 @@ public class StackPanelIntroAnimationBehavior
 
     private static void HandleIsIntroAnimationChanged(Panel panel, AvaloniaPropertyChangedEventArgs args)
     {
-        if (!GetIsIntroAnimationEnabled(panel) || GetIsAnimationPlayingStarted(panel) || IThemeService.AnimationLevel <= 1)
+        if (!GetIsIntroAnimationEnabled(panel) || GetIsAnimationPlayingStarted(panel) || AnimationAssist.AnimationLevel <= 1)
         {
             return;
         }

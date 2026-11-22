@@ -9,12 +9,6 @@ namespace ClassIsland.Core.Assists;
 /// </summary>
 public class MainWindowStylesAssist
 {
-    public static readonly AttachedProperty<bool> IsIslandSeperatedProperty =
-        AvaloniaProperty.RegisterAttached<MainWindowStylesAssist, Control, bool>("IsIslandSeperated", inherits:true);
-
-    public static void SetIsIslandSeperated(Control obj, bool value) => obj.SetValue(IsIslandSeperatedProperty, value);
-    public static bool GetIsIslandSeperated(Control obj) => obj.GetValue(IsIslandSeperatedProperty);
-
     public static readonly AttachedProperty<double> CornerRadiusProperty =
         AvaloniaProperty.RegisterAttached<MainWindowStylesAssist, Control, double>("CornerRadius", inherits:true);
 

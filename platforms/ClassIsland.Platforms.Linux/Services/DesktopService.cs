@@ -37,9 +37,4 @@ public class DesktopService : IDesktopService
             }
         }
     }
-
-    public bool IsUrlSchemeRegistered
-    {
-        get => false;set{} 
-    }
 }

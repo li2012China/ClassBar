@@ -94,21 +94,6 @@ public partial class App : AppBase, IAppHost
 
     internal static bool _isCriticalSafeModeEnabled = false;
 
-    internal static bool AutoDisableCorruptPlugins
-    {
-        get
-        {
-            try
-            {
-                return ((App)Current).Settings.AutoDisableCorruptPlugins;
-            }
-            catch
-            {
-                return true;
-            }
-        }
-    }
-
     public override bool IsDevelopmentBuild =>
 #if DevelopmentBuild
         true
@@ -386,8 +371,6 @@ public partial class App : AppBase, IAppHost
             });
         }
 
-        var plugins = DiagnosticService.GetPluginsByStacktrace(e);
-        var disabled = DiagnosticService.DisableCorruptPlugins(plugins);
         var managementService = IAppHost.TryGetService<IManagementService>();
         if (managementService is IManagementService { IsManagementEnabled: true, Connection: ManagementServerConnection connection })
         {
@@ -400,16 +383,6 @@ public partial class App : AppBase, IAppHost
         {
             var traceId = SentrySdk.GetTraceHeader()?.TraceId;
             var crashInfo = e.ToString();
-            if (plugins.Count > 0)
-            {
-                var pluginsWarning = "此问题可能由以下插件引起，请在向 ClassIsland 开发者反馈问题前先向以下插件的开发者反馈此问题："+Environment.NewLine
-                                     + string.Join(Environment.NewLine, plugins.Select(x => $"- {x.Manifest.Name} [{x.Manifest.Id},{x.Manifest.Version}]"))
-                                     + (disabled
-                                         ? Environment.NewLine+"以上异常插件已自动禁用，重启应用后生效。您可以在排除问题后前往【应用设置】->【插件】中重新启用这些插件，或在【应用设置】->【基本】中调整是否自动禁用异常插件。"
-                                         : "")
-                    +Environment.NewLine+ "================================"+Environment.NewLine;
-                crashInfo = pluginsWarning + crashInfo;
-            }
             if (traceId != null)
             {
                 var traceInfo = $"""
@@ -475,11 +448,11 @@ public partial class App : AppBase, IAppHost
         }
         if (bool.TryParse(GlobalStorageService.GetValue("UseNativeTitlebar"), out var b))
         {
-            IThemeService.UseNativeTitlebar = b;
+            AnimationAssist.UseNativeTitlebar = b;
         }
         else
         {
-            IThemeService.UseNativeTitlebar = !System.OperatingSystem.IsWindows() 
+            AnimationAssist.UseNativeTitlebar = !System.OperatingSystem.IsWindows() 
                                               || AvaloniaUnsafeAccessorHelpers.GetActiveWin32CompositionMode() 
                                                     != Win32CompositionMode.WinUIComposition;
         }
@@ -542,7 +515,7 @@ public partial class App : AppBase, IAppHost
         }
 
         // 检测桌面文件夹
-        if (Environment.CurrentDirectory == Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory) && !Settings.IsWelcomeWindowShowed)
+        if (Environment.CurrentDirectory == Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory))
         {
             var r = await CommonTaskDialogs.ShowDialog("检测到正在桌面上运行", "ClassIsland正在桌面上运行，应用设置、课表等数据将会直接存放到桌面上。在使用本应用前，请将本应用移动到一个单独的文件夹中。");
             if (r == (object)true)
@@ -622,7 +595,6 @@ public partial class App : AppBase, IAppHost
         spanProcessUpdate.Finish();
 
         FileFolderService.CreateFolders();
-        PluginService.ProcessPluginsInstall();
         bool isSystemSpeechSystemExist = false;
         var spanHostBuilding = spanPreInit.StartChild("startup-host-building");
 
@@ -640,14 +612,6 @@ public partial class App : AppBase, IAppHost
             Logger.LogInformation("诊断模式已启用!");
             Logger.LogDebug("{DiagnosticMessage}", diagService.GetDiagnosticInfo());
         }
-        foreach (var plugin in PluginService.PluginLoadedStatus.Where(p => p.LoadStatus == PluginLoadStatus.Error))
-        {
-            Logger.LogWarning("插件加载失败:{PluginName}({PluginID},{PluginVersion}):{PluginLoadException}", plugin.Manifest.Name,plugin.Manifest.Id, plugin.Manifest.Version, plugin.Exception);
-        }
-        Logger.LogInformation(
-            PluginService.PluginLoadedStatus.Any(p => p.LoadStatus == PluginLoadStatus.Loaded) ? "此次会话已加载插件:{loadedPlugin}" : "此次会话没有加载插件。",
-            string.Join(",", PluginService.PluginLoadedStatus.Where(p => p.LoadStatus == PluginLoadStatus.Loaded).Select(p => $"{p.Manifest.Name}({p.Manifest.Id},{p.Manifest.Version})"))
-        );
         var lifetime = IAppHost.GetService<IHostApplicationLifetime>();
         lifetime.ApplicationStarted.Register(() => Logger.LogInformation("App started."));
         lifetime.ApplicationStopping.Register(() =>
@@ -667,24 +631,6 @@ public partial class App : AppBase, IAppHost
 #endif
         spanHostBuilding.Finish();
         spanPreInit.Finish();
-        if (!string.IsNullOrWhiteSpace(ApplicationCommand.ImportV1) || !string.IsNullOrWhiteSpace(ApplicationCommand.ImportV2))
-        {
-            var dtWindow = new DataTransferWindow()
-            {
-                ImportName = "ClassIsland"
-            };
-            dtWindow.Show();
-            var entries = int.TryParse(ApplicationCommand.ImportEntries, out var r) ? r : 0;
-            if (!string.IsNullOrWhiteSpace(ApplicationCommand.ImportV1))
-            {
-                await dtWindow.PerformClassIslandImport(ApplicationCommand.ImportV1, (ImportEntries)entries);
-            }
-            else
-            {
-                await dtWindow.PerformClassIsland2Import(ApplicationCommand.ImportV2, (ImportEntries)entries);
-            }
-            return;
-        }
         var spanLaunching = transaction.StartChild("startup-launching");
         var spanSetupMgmt = spanLaunching.StartChild("startup-setup-mgmt");
         var successSetupMgmt = await GetService<IManagementService>().SetupManagement();
@@ -722,9 +668,9 @@ public partial class App : AppBase, IAppHost
         // 提前初始化好音频服务，防止在其他地方出现重复初始化的问题
         IAppHost.GetService<IAudioService>();
 
-        IThemeService.IsTransientDisabled = Settings.AnimationLevel < 1;
-        IThemeService.IsWaitForTransientDisabled = Settings.IsWaitForTransientDisabled;
-        IThemeService.AnimationLevel = Settings.AnimationLevel;
+        AnimationAssist.IsTransientDisabled = Settings.AnimationLevel < 1;
+        AnimationAssist.IsWaitForTransientDisabled = Settings.IsWaitForTransientDisabled;
+        AnimationAssist.AnimationLevel = Settings.AnimationLevel;
         GetService<ISplashService>().CurrentProgress = 30;
         GetService<ISplashService>().SetDetailedStatus("正在启动挂起检查服务");
 
@@ -762,62 +708,6 @@ public partial class App : AppBase, IAppHost
         // _ = GetService<WallpaperPickingService>().GetWallpaperAsync();
         
         _ = IAppHost.Host.StartAsync();
-        IAppHost.GetService<IPluginMarketService>().LoadPluginSource();
-        
-        if (!Settings.IsWelcomeWindowShowed || ApplicationCommand.Refreshing || ApplicationCommand.Onboarding)
-        {
-            if (Settings.IsSplashEnabled)
-            {
-                await GetService<ISplashService>().EndSplash();
-            }
-
-            if (System.OperatingSystem.IsLinux() && GlobalStorageService.GetValue("IgnoreQtScaling") != "1")
-            {
-                var dialog = new TaskDialog()
-                {
-                    Title = "ClassIsland",
-                    Header = "当前界面缩放是否正常？",
-                    Content = "如果您发现当前界面缩放相对系统缩放过小，可点击【不正常】按钮使应用启用兼容缩放模式，以缓解在部分平台上的缩放异常的问题。",
-                    XamlRoot = GetRootWindow(),
-                    Buttons =
-                    [
-                        new TaskDialogButton("正常", false),
-                        new TaskDialogButton("不正常", true)
-                    ],
-                };
-                var r = await dialog.ShowAsync();
-                if (Equals(r, true))
-                {
-                    GlobalStorageService.SetValue("IgnoreQtScaling", "1");
-                    Restart();
-                    return;
-                }
-            }
-            var w = IAppHost.GetService<WelcomeWindow>();
-            if (ApplicationCommand.Refreshing)
-            {
-                w.SetWelcomeExperience(true, ApplicationCommand.Onboarding, true);
-            }
-            await w.ShowDialog(PhonyRootWindow);
-            if (w is { IsOnboarding: true, ViewModel.IsManuallyRestarted: false })
-            {
-                if (!w.ViewModel.IsWizardCompleted)
-                {
-                    Stop();
-                }
-                else
-                {
-                    Settings.IsWelcomeWindowShowed = true;
-                    Restart();
-                }
-                return;
-            }
-
-            if (w.ViewModel.IsManuallyRestarted)
-            {
-                return;
-            }
-        }
 
         // 如果不是开发构建, 则自动重置部分可能影响使用的调试选项
         #if !DEBUG
@@ -861,32 +751,6 @@ public partial class App : AppBase, IAppHost
             {
                 PlatformServices.DesktopToastService.ShowToastAsync("配置文件损坏", "ClassIsland 部分配置文件已损坏且无法加载，这些配置文件已恢复至默认值。点击此消息以查看详细信息和从过往备份中恢复配置文件。", () => GetService<IUriNavigationService>().NavigateWrapped(new Uri("classisland://app/config-errors")));
             }
-            if (Settings.CorruptPluginsDisabledLastSession)
-            {
-                Settings.CorruptPluginsDisabledLastSession = false;
-                var content = new DesktopToastContent()
-                {
-                    Title = "已自动禁用异常插件",
-                    Body = "ClassIsland 已自动禁用导致上次崩溃的插件。您可以在排除问题后前往【应用设置】->【插件】中重新启用这些插件，或在【应用设置】->【基本】中调整是否自动禁用异常插件。",
-                    Buttons =
-                    {
-                        {
-                            "打开插件设置",
-                            () => GetService<IUriNavigationService>()
-                                .NavigateWrapped(new Uri("classisland://app/settings/classisland.plugins"))
-                        },
-                        {
-                            "管理异常插件行为",
-                            () => GetService<IUriNavigationService>()
-                                .NavigateWrapped(new Uri("classisland://app/settings/general"))
-                        }
-                    }
-                };
-                content.Activated += (_, _) => GetService<IUriNavigationService>()
-                    .NavigateWrapped(new Uri("classisland://app/settings/classisland.plugins"));
-                PlatformServices.DesktopToastService.ShowToastAsync(content);
-            }
-
             if (Settings.IsSplashEnabled)
             {
                 App.GetService<ISplashService>().EndSplash();
@@ -897,15 +761,6 @@ public partial class App : AppBase, IAppHost
             }
             _isStartedCompleted = true;
             AppBase.CurrentLifetime = ClassIsland.Core.Enums.ApplicationLifetime.Running;
-            if (ApplicationCommand.ImportComplete)
-            {
-                var dtWindow = new DataTransferWindow()
-                {
-                    ImportName = "ClassIsland"
-                };
-                dtWindow.Show();
-                dtWindow.ImportComplete(ApplicationCommand.ImportV1Complete);
-            }
         };
 #if DEBUG
         MemoryProfiler.GetSnapshot("Pre MainWindow show");
@@ -1179,7 +1034,7 @@ public partial class App : AppBase, IAppHost
 
     private void NativeMenuItemOpenAbout_OnClick(object? sender, EventArgs e)
     {
-        if (CurrentLifetime != Core.Enums.ApplicationLifetime.Running || !Settings.IsWelcomeWindowShowed)
+        if (CurrentLifetime != Core.Enums.ApplicationLifetime.Running)
         {
             return;
         }

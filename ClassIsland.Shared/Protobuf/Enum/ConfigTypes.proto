@@ -9,5 +9,4 @@ enum ConfigTypes {
   CurrentComponent = 3;
   CurrentAutomation = 4;
   Logs = 5;
-  PluginList = 6;
 }

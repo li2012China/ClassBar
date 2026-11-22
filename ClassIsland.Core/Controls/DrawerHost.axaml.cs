@@ -67,7 +67,7 @@ public class DrawerHost : ContentControl
 
     public DrawerHost()
     {
-        if (IThemeService.AnimationLevel >= 1)
+        if (AnimationAssist.AnimationLevel >= 1)
         {
             PseudoClasses.Set(":animated", true);
         }

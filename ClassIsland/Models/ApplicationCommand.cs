@@ -30,8 +30,6 @@ public class ApplicationCommand
 
     public string Uri { get; set; } = "";
 
-    public string ExternalPluginPath { get; set; } = "";
-
     public bool EnableSentryDebug { get; set; } = false;
 
     public bool Verbose { get; set; } = false;
@@ -45,8 +43,6 @@ public class ApplicationCommand
 
     public string ImportV1 { get; set; } = "";
     public string ImportV2 { get; set; } = "";
-
-    public bool SkipOobe { get; set; } = false;
 
     public string ImportEntries { get; set; } = "0";
 

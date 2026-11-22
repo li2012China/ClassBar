@@ -18,7 +18,7 @@ public class AppWindowInitializeAppWindowPatcher
     
     static void Postfix(AppWindow __instance)
     {
-        if (!IThemeService.UseNativeTitlebar) return;
+        if (!AnimationAssist.UseNativeTitlebar) return;
         GetPseudoClasses(__instance).Remove(":windows");
         SetIsWindowsProperty(__instance, false);
     }

@@ -82,7 +82,6 @@ public partial class SettingsWindowNew : MyWindow, INavigationPageFactory
     public static readonly string StartupSettingsPage = "general";
 
     private IComponentsService ComponentsService { get; }
-    private ITutorialService TutorialService { get; }
 
     private string LaunchSettingsPage { get; set; } = StartupSettingsPage;
 
@@ -102,14 +101,12 @@ public partial class SettingsWindowNew : MyWindow, INavigationPageFactory
 
     public SettingsWindowNew(IManagementService managementService, IHangService hangService,
         ILogger<SettingsWindowNew> logger, DiagnosticService diagnosticService, SettingsService settingsService,
-        IComponentsService componentsService, IUriNavigationService uriNavigationService,
-        ITutorialService tutorialService)
+        IComponentsService componentsService, IUriNavigationService uriNavigationService)
     {
         Logger = logger;
         DataContext = this;
         ManagementService = managementService;
         ComponentsService = componentsService;
-        TutorialService = tutorialService;
         DiagnosticService = diagnosticService;
         HangService = hangService;
         SettingsService = settingsService;
@@ -476,7 +473,6 @@ public partial class SettingsWindowNew : MyWindow, INavigationPageFactory
 
             Activate();
         }
-        TutorialService.PushToNextSentence("classisland.getStarted.welcome/systems");
     }
 
     public async void Open(string key, Uri? uri = null)
@@ -717,29 +713,6 @@ public partial class SettingsWindowNew : MyWindow, INavigationPageFactory
 
     private async void MenuItemAddClassSwapShortcut_OnClick(object sender, RoutedEventArgs e)
     {
-        if (!PlatformServices.DesktopService.IsUrlSchemeRegistered)
-        {
-            var urlDialogResult = await new TaskDialog()
-            {
-                Header = "创建快捷换课快捷方式",
-                Content = "快捷换课快捷方式需要启用【注册 Url 协议】选项才能工作。您要启用它吗？",
-                XamlRoot = this,
-                Buttons =
-                {
-                    new TaskDialogButton("取消", false),
-                    new TaskDialogButton("启用", true)
-                    {
-                        IsDefault = true
-                    }
-                }
-            }.ShowAsync();
-            if (!Equals(urlDialogResult, true))
-            {
-                return;
-            }
-
-            PlatformServices.DesktopService.IsUrlSchemeRegistered = true;
-        }
         PopupHelper.DisableAllPopups();
         var file = await PlatformServices.FilePickerService.SaveFilePickerAsync(new FilePickerSaveOptions()
         {
@@ -823,11 +796,6 @@ public partial class SettingsWindowNew : MyWindow, INavigationPageFactory
     private void TogglePaneButton_OnClick(object? sender, RoutedEventArgs e)
     {
         NavigationView.IsPaneOpen = !NavigationView.IsPaneOpen;
-    }
-
-    private void MenuItemDataTransfer_OnClick(object? sender, RoutedEventArgs e)
-    {
-        IAppHost.GetService<DataTransferWindow>().ShowDialog(this);
     }
 
     private void MenuItemOpenManagementSettingsPage_OnClick(object? sender, RoutedEventArgs e)

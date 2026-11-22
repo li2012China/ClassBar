@@ -20,7 +20,6 @@ using ClassIsland.Core.Assists;
 using ClassIsland.Core.Commands;
 using ClassIsland.Core.Helpers;
 using ClassIsland.Core.Helpers.UI;
-using ClassIsland.Core.Models.Theming;
 using CommunityToolkit.Mvvm.ComponentModel;
 using FluentAvalonia.UI.Windowing;
 

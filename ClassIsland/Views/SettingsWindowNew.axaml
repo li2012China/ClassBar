@@ -208,9 +208,6 @@
                                             </MenuItem.IsVisible>
                                         </MenuItem>
                                     </MenuItem>
-                                    <MenuItem Icon="{commands:FluentIcon &#xe083;}"
-                                              Header="数据迁移…"
-                                              Click="MenuItemDataTransfer_OnClick"/>
                                     <Separator />
                                     <MenuItem Icon="{controls:FluentIcon &#xE2B4;}" Header="集控选项…"
                                               Click="MenuItemOpenManagementSettingsPage_OnClick">

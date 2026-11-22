@@ -223,7 +223,7 @@ public partial class ComponentPresenter : UserControl, INotifyPropertyChanged
 
     private static void PlayFadeInAnimation(ComponentPresenter control)
     {
-        if (IThemeService.AnimationLevel < 2)
+        if (AnimationAssist.AnimationLevel < 2)
         {
             return;
         }

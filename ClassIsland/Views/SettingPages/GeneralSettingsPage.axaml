@@ -60,24 +60,10 @@
                     <ToggleSwitch IsChecked="{Binding IsAutoStartEnabled, Source={x:Static abstraction:PlatformServices.DesktopService}, Mode=TwoWay}"/>
                 </controls3:SettingsExpander.Footer>
             </controls3:SettingsExpander>
-            <!-- 注册 Url 协议 -->
-            <controls3:SettingsExpander IconSource="{ci:FluentIconSource &#xEAB0;}" 
-                                        Header="注册 Url 协议"
-                                        Description="允许第三方应用或网页通过 Url 协议 classisland:// 调用本应用的部分功能，详见帮助文档。">
-                <controls3:SettingsExpander.IsVisible>
-                    <OnPlatform Default="False">
-                        <On Options="Windows" Content="True"/>
-                        <On Options="Linux" Content="True"/>
-                    </OnPlatform>
-                </controls3:SettingsExpander.IsVisible>
-                <controls3:SettingsExpander.Footer>
-                    <ToggleSwitch IsChecked="{Binding IsUrlSchemeRegistered, Source={x:Static abstraction:PlatformServices.DesktopService}, Mode=TwoWay}"/>
-                </controls3:SettingsExpander.Footer>
-            </controls3:SettingsExpander>
             <!--  学期开始时间  -->
             <controls3:SettingsExpander IconSource="{ci:FluentIconSource &#xE304;}"
                                         Header="学期开始时间"
-                                        Description="设置学期首日，该日期将作为多周轮换课表的计算起点和每周的第一天。">
+                                        Description="设置学期首日，该日期将作为多周轮换课表的计算起点和每周的第一天。未设置时按当前日期默认取 3 月 1 日或 9 月 1 日。">
                 <controls3:SettingsExpander.Footer>
                     <StackPanel Orientation="Horizontal"
                                 Spacing="4">
