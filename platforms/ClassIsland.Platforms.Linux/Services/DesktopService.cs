@@ -8,17 +8,24 @@ namespace ClassIsland.Platforms.Linux.Services;
 public class DesktopService : IDesktopService
 {
     private static string StartupPath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+        ".config/autostart/classbar.desktop");
+
+    private static string LegacyStartupPath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
         ".config/autostart/cn.classisland.app.desktop");
-    
+
     public bool IsAutoStartEnabled
     {
-        get =>
-            File.Exists(StartupPath);
+        get => File.Exists(StartupPath);
         set
         {
             try
             {
                 var startupPath = StartupPath;
+                // 清理旧版开机启动项，避免升级后仍指向 ClassIsland
+                if (File.Exists(LegacyStartupPath))
+                {
+                    File.Delete(LegacyStartupPath);
+                }
                 if (!Path.Exists(Path.GetDirectoryName(startupPath)))
                 {
                     Directory.CreateDirectory(Path.GetDirectoryName(startupPath) ?? "");

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Threading.Tasks;
 using Avalonia.Platform;
@@ -15,7 +15,10 @@ public static class ShortcutHelpers
         if (OperatingSystem.IsWindows())
         {
             var desktopPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory),
+                "ClassBar.lnk");
+            var legacyDesktopPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory),
                 "ClassIsland.lnk");
+            if (File.Exists(legacyDesktopPath)) File.Delete(legacyDesktopPath);
 
             using var shortcut = new WindowsShortcut();
             shortcut.Path = AppBase.ExecutingEntrance;
@@ -25,7 +28,10 @@ public static class ShortcutHelpers
         else if (OperatingSystem.IsLinux())
         {
             var desktopPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory),
+                "ClassBar.desktop");
+            var legacyDesktopPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory),
                 "ClassIsland.desktop");
+            if (File.Exists(legacyDesktopPath)) File.Delete(legacyDesktopPath);
 
             await CreateFreedesktopShortcutAsync(desktopPath, false);
             await CopyFreeDesktopIconAsync();
@@ -37,7 +43,10 @@ public static class ShortcutHelpers
         if (OperatingSystem.IsWindows())
         {
             var startMenuPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.StartMenu),
+                "ClassBar.lnk");
+            var legacyStartMenuPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.StartMenu),
                 "ClassIsland.lnk");
+            if (File.Exists(legacyStartMenuPath)) File.Delete(legacyStartMenuPath);
 
             using var shortcut = new WindowsShortcut();
             shortcut.Path = AppBase.ExecutingEntrance;
@@ -47,7 +56,10 @@ public static class ShortcutHelpers
         else if (OperatingSystem.IsLinux())
         {
             var startMenuPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                ".local/share/applications/classbar.desktop");
+            var legacyStartMenuPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
                 ".local/share/applications/cn.classisland.app.desktop");
+            if (File.Exists(legacyStartMenuPath)) File.Delete(legacyStartMenuPath);
 
             await CreateFreedesktopShortcutAsync(startMenuPath, false);
             await CopyFreeDesktopIconAsync();
@@ -66,16 +78,16 @@ public static class ShortcutHelpers
     {
         if (AppBase.Current.PackagingType == "deb")
         {
-            File.Copy("/usr/share/applications/cn.classisland.app.desktop", path, true);
+            File.Copy("/usr/share/applications/classbar.desktop", path, true);
             SetUnixExecutePermission(path);
             return;
         }
         var targetPath = string.IsNullOrEmpty(path)
             ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-                ".local/share/applications/cn.classisland.app.desktop") : path;
+                ".local/share/applications/classbar.desktop") : path;
 
         var raw = await new StreamReader(
-                AssetLoader.Open(new Uri("avares://ClassIsland/Assets/ShortcutTemplates/cn.classisland.app.desktop")))
+                AssetLoader.Open(new Uri("avares://ClassIsland/Assets/ShortcutTemplates/classbar.desktop")))
             .ReadToEndAsync();
         var args = isAutostart ? "--autostartup" : "--uri %u";
         var final = string.Format(raw, AppBase.AppVersion, AppBase.ExecutingEntrance, args);
@@ -94,7 +106,7 @@ public static class ShortcutHelpers
             }
 
             await using var src = AssetLoader.Open(new Uri("avares://ClassIsland/Assets/FreedesktopIcons/AppLogo@128w.png"));
-            await using var file = File.OpenWrite(Path.Combine(iconsDir, "classisland.png"));
+            await using var file = File.OpenWrite(Path.Combine(iconsDir, "classbar.png"));
             await src.CopyToAsync(file);
         }
     }

@@ -1,11 +1,11 @@
 [Desktop Entry]
 Version={0}
 Encoding=UTF-8
-Name=ClassIsland
+Name=ClassBar
 GenericName=班级大屏课表
-Comment=dev_全功能、可定制、跨平台的大屏课表显示工具。
-Exec={1} --uri %u
-Icon=classisland
+Comment=在屏幕顶部常驻显示课表、时间与倒计时。
+Exec={1} {2}
+Icon=classbar
 StartupNotify=true
 Terminal=false
 Type=Application

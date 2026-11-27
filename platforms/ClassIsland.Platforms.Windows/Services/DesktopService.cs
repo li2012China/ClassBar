@@ -6,13 +6,24 @@ namespace ClassIsland.Platform.Windows.Services;
 
 public class DesktopService : IDesktopService
 {
+    private static string StartupShortcutName => "ClassBar.lnk";
+    private static string LegacyStartupShortcutName => "ClassIsland.lnk";
+
+    private static string StartupPath(string name) =>
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Startup), name);
+
     public bool IsAutoStartEnabled
     {
-        get => File.Exists(
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Startup), "ClassIsland.lnk"));
+        get => File.Exists(StartupPath(StartupShortcutName));
         set
         {
-            var path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Startup), "ClassIsland.lnk");
+            var path = StartupPath(StartupShortcutName);
+            // 清理旧版开机启动项，避免升级后仍指向 ClassIsland
+            var legacy = StartupPath(LegacyStartupShortcutName);
+            if (File.Exists(legacy))
+            {
+                File.Delete(legacy);
+            }
             if (value)
             {
                 using var shortcut = new WindowsShortcut();
@@ -21,11 +32,10 @@ public class DesktopService : IDesktopService
                 shortcut.WorkingDirectory = Path.GetDirectoryName(AppBase.ExecutingEntrance);
                 shortcut.Save(path);
             }
-            else
+            else if (File.Exists(path))
             {
                 File.Delete(path);
             }
-            
         }
     }
 }
