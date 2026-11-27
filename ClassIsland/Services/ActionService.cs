@@ -248,9 +248,9 @@ public class ActionService : IActionService
         ));
 
         ActionMenuTree.Add(
-            new ActionMenuTreeGroup("ClassIsland", "\ue454",
-            new ActionMenuTreeItem("classisland.app.quit", "退出 ClassIsland", "\ue0df"),
-            new ActionMenuTreeItem("classisland.app.restart", "重启 ClassIsland", "\ue0bd")
+            new ActionMenuTreeGroup("ClassBar", "\ue454",
+            new ActionMenuTreeItem("classisland.app.quit", "退出 ClassBar", "\ue0df"),
+            new ActionMenuTreeItem("classisland.app.restart", "重启 ClassBar", "\ue0bd")
         ));
 
         return;

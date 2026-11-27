@@ -154,7 +154,7 @@
             <controls3:SettingsExpander IconSource="{ci:FluentIconSource &#xE7C5;}"
                                         Header="天气位置"
                                         IsExpanded="True"
-                                        Description="设置 ClassIsland 用于查询天气的位置信息及获取方式。">
+                                        Description="设置 ClassBar 用于查询天气的位置信息及获取方式。">
                 <controls3:SettingsExpander.Footer>
                     <ListBox Theme="{StaticResource ChipListBoxTheme}"
                              SelectionMode="Single"

@@ -22,7 +22,7 @@
             <controls:ListDetailView.LeftContent>
                 <Grid RowDefinitions="Auto,Auto,*,Auto" Classes="animated-intro">
                     <!--  左上：自动化开关  -->
-                    <fa:SettingsExpander Description="自动化是一种可使 ClassIsland 自动作出行动的功能。"
+                    <fa:SettingsExpander Description="自动化是一种可使 ClassBar 自动作出行动的功能。"
                                          Header="启用自动化"
                                          IconSource="{ci:FluentIconSource &#xEEF1;}">
                         <fa:SettingsExpander.Resources>
@@ -367,7 +367,7 @@
                 <TextBlock Margin="0 10 0 0"
                            xml:space="preserve" LineSpacing="4">
 　欢迎使用自动化！
-　自动化可以使 ClassIsland 根据条件自动作出行动，
+　自动化可以使 ClassBar 根据条件自动作出行动，
 　比如修改应用设置、打开应用，等等。</TextBlock>
                 <Button Margin="0 15"
                         Command="{x:Static ci:UriNavigationCommands.UriNavigationCommand}"
@@ -385,7 +385,7 @@
                         <ci:IconText Glyph="&#xF430;"
                                      Text="警告" />
                         <TextBlock xml:space="preserve" LineSpacing="3">
-自动化允许自动修改 ClassIsland 的各项设置，并调用
+自动化允许自动修改 ClassBar 的各项设置，并调用
 　外部程序，可能有一定安全风险。
 　不当的自动化编写可能对正常教学造成影响，请勿滥用。</TextBlock>
                     </StackPanel>

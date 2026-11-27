@@ -179,7 +179,7 @@ public class ManagementService : IManagementService
             if (Manifest.CoreVersion.Major != IAppHost.CoreVersion.Major)
             {
                 await CommonTaskDialogs.ShowDialog("集控核心版本不兼容",
-                    $"您正在核心版本主版本号（{IAppHost.CoreVersion}）与集控数据核心版本主版本号（{Manifest.CoreVersion}）不同的 ClassIsland 加入集控，这可能会导致您的数据损坏。请运行兼容贵组织集控服务的 ClassIsland 版本，或者联系您的管理员了解详细信息。");
+                    $"您正在核心版本主版本号（{IAppHost.CoreVersion}）与集控数据核心版本主版本号（{Manifest.CoreVersion}）不同的 ClassBar 加入集控，这可能会导致您的数据损坏。请运行兼容贵组织集控服务的 ClassBar 版本，或者联系您的管理员了解详细信息。");
                 return false;
             }
             SaveConfig(ManagementManifestPath, Manifest);
@@ -237,7 +237,7 @@ public class ManagementService : IManagementService
 
         var dialog = new TaskDialog
         {
-            Title = "ClassIsland",
+            Title = "ClassBar",
             SubHeader = "加入集控",
             Content = $"确定要加入组织 {mf.OrganizationName} 的管理吗？",
             Buttons =
@@ -287,7 +287,7 @@ public class ManagementService : IManagementService
         
         var dialog = new TaskDialog
         {
-            Title = "ClassIsland",
+            Title = "ClassBar",
             SubHeader = "退出集控",
             Content = $"确定要退出组织 {Manifest.OrganizationName} 的管理吗？",
             Buttons =

@@ -24,14 +24,14 @@ namespace ClassIsland.Services;
 
 public class RefreshingService(SettingsService settingsService, IExactTimeService exactTimeService) : IRefreshingService
 {
-    public const string DefaultOnboardingToastTitle = "欢迎使用 ClassIsland (/≧▽≦)/";
+    public const string DefaultOnboardingToastTitle = "欢迎使用 ClassBar (/≧▽≦)/";
 
     public const string DefaultOnboardingToastBody =
-        "屏幕上的课表是由本大屏课表软件 ClassIsland 显示的。ClassIsland 能一目了然地显示各种信息，并支持高度自定义。要了解如何使用 ClassIsland 吗？";
+        "屏幕上的课表是由本大屏课表软件 ClassBar 显示的。ClassBar 能一目了然地显示各种信息，并支持高度自定义。要了解如何使用 ClassBar 吗？";
 
-    public const string DefaultRefreshingToastTitle = "翻新 ClassIsland";
+    public const string DefaultRefreshingToastTitle = "翻新 ClassBar";
 
-    public const string DefaultRefreshingToastBody = "ClassIsland 似乎已经有一个长假没有启动了，部分设置可能已经过期。要跟随欢迎向导重新设置如学期开始时间等设置吗？";
+    public const string DefaultRefreshingToastBody = "ClassBar 似乎已经有一个长假没有启动了，部分设置可能已经过期。要跟随欢迎向导重新设置如学期开始时间等设置吗？";
     
     public SettingsService SettingsService { get; } = settingsService;
     public IExactTimeService ExactTimeService { get; } = exactTimeService;
@@ -99,7 +99,7 @@ public class RefreshingService(SettingsService settingsService, IExactTimeServic
                 },
             ],
             XamlRoot = AppBase.Current.GetRootWindow(),
-            Title = "欢迎使用 ClassIsland"
+            Title = "欢迎使用 ClassBar"
         }.ShowAsync();
         if (Equals(r, 0))
         {
@@ -182,7 +182,7 @@ public class RefreshingService(SettingsService settingsService, IExactTimeServic
 
         if (!scopes.Profile)
         {
-            await PlatformServices.DesktopToastService.ShowToastAsync("翻新成功", "已按所选范围重置 ClassIsland 数据。");
+            await PlatformServices.DesktopToastService.ShowToastAsync("翻新成功", "已按所选范围重置 ClassBar 数据。");
             return false;
         }
 

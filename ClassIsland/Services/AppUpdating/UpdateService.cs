@@ -664,7 +664,7 @@ public class UpdateService : IHostedService, INotifyPropertyChanged
             }
             if (deploymentLock.SubChannel != GetCurrentSubChannel())
             {
-                throw new InvalidOperationException("下载的更新不适用于当前子频道的 ClassIsland");
+                throw new InvalidOperationException("下载的更新不适用于当前子频道的 ClassBar");
             }
             var publicKey =
                 AppBase.Current.IsDevelopmentBuild && !string.IsNullOrWhiteSpace(Settings.DebugPublicKeyOverride)

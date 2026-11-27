@@ -419,7 +419,7 @@ public partial class App : AppBase, IAppHost
                 Logger?.LogInformation("因教学安全模式设定，应用将忽略异常并显示一条通知");
                 try
                 {
-                    await PlatformServices.DesktopToastService.ShowToastAsync("崩溃报告", $"ClassIsland 发生了一个无法处理的错误：{e.Message}");
+                    await PlatformServices.DesktopToastService.ShowToastAsync("崩溃报告", $"ClassBar 发生了一个无法处理的错误：{e.Message}");
                 }
                 catch (Exception exception)
                 {
@@ -509,7 +509,7 @@ public partial class App : AppBase, IAppHost
         // 检测临时目录
         if (Environment.CurrentDirectory.Contains(Path.GetTempPath()))
         {
-            await CommonTaskDialogs.ShowDialog("检测到应用正在临时目录下运行", "ClassIsland正在临时目录下运行，应用设置、课表等数据很可能无法保存，或在应用退出后被自动删除。在使用本应用前，请务必将本应用解压到一个适合的位置。");
+            await CommonTaskDialogs.ShowDialog("检测到应用正在临时目录下运行", "ClassBar正在临时目录下运行，应用设置、课表等数据很可能无法保存，或在应用退出后被自动删除。在使用本应用前，请务必将本应用解压到一个适合的位置。");
             Environment.Exit(0);
             return;
         }
@@ -517,7 +517,7 @@ public partial class App : AppBase, IAppHost
         // 检测桌面文件夹
         if (Environment.CurrentDirectory == Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory))
         {
-            var r = await CommonTaskDialogs.ShowDialog("检测到正在桌面上运行", "ClassIsland正在桌面上运行，应用设置、课表等数据将会直接存放到桌面上。在使用本应用前，请将本应用移动到一个单独的文件夹中。");
+            var r = await CommonTaskDialogs.ShowDialog("检测到正在桌面上运行", "ClassBar正在桌面上运行，应用设置、课表等数据将会直接存放到桌面上。在使用本应用前，请将本应用移动到一个单独的文件夹中。");
             if (r == (object)true)
             {
                 Environment.Exit(0);
@@ -534,7 +534,7 @@ public partial class App : AppBase, IAppHost
         }
         catch (Exception ex)
         {
-            await CommonTaskDialogs.ShowDialog("目录权限错误", $"ClassIsland无法写入当前目录：{ex.Message}"+Environment.NewLine+Environment.NewLine+"请将本软件解压到一个合适的位置后再运行。");
+            await CommonTaskDialogs.ShowDialog("目录权限错误", $"ClassBar无法写入当前目录：{ex.Message}"+Environment.NewLine+Environment.NewLine+"请将本软件解压到一个合适的位置后再运行。");
             Environment.Exit(0);
             return;
         }
@@ -549,7 +549,7 @@ public partial class App : AppBase, IAppHost
             var dialog = new TaskDialog()
             {
                 Title = "进入恢复模式",
-                Content = "ClassIsland 多次启动失败，您需要进入恢复模式以尝试修复 ClassIsland 吗？",
+                Content = "ClassBar 多次启动失败，您需要进入恢复模式以尝试修复 ClassBar 吗？",
                 XamlRoot = GetRootWindow(),
                 Buttons =
                 [
@@ -605,7 +605,7 @@ public partial class App : AppBase, IAppHost
             .Build();
         AppBase.CurrentLifetime = ClassIsland.Core.Enums.ApplicationLifetime.StartingOffline;
         Logger = GetService<ILogger<App>>();
-        Logger.LogInformation("ClassIsland {}", AppVersionLong);
+        Logger.LogInformation("ClassBar {}", AppVersionLong);
         if (App.ApplicationCommand.Diagnostic)
         {
             var diagService = GetService<DiagnosticService>();
@@ -703,7 +703,7 @@ public partial class App : AppBase, IAppHost
         
         if (ApplicationCommand.Diagnostic)
         {
-            await GetService<DiagnosticService>().ExportDiagnosticData(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), $"ClassIsland_DiagnosticData_{DateTime.Now:yy-MMM-dd_HH-mm-ss}.zip"), false);
+            await GetService<DiagnosticService>().ExportDiagnosticData(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), $"ClassBar_DiagnosticData_{DateTime.Now:yy-MMM-dd_HH-mm-ss}.zip"), false);
         }
         // _ = GetService<WallpaperPickingService>().GetWallpaperAsync();
         
@@ -749,7 +749,7 @@ public partial class App : AppBase, IAppHost
             File.Delete(startupCountFilePath);
             if (ConfigureFileHelper.Errors.FirstOrDefault(x => x.Critical) != null)
             {
-                PlatformServices.DesktopToastService.ShowToastAsync("配置文件损坏", "ClassIsland 部分配置文件已损坏且无法加载，这些配置文件已恢复至默认值。点击此消息以查看详细信息和从过往备份中恢复配置文件。", () => GetService<IUriNavigationService>().NavigateWrapped(new Uri("classisland://app/config-errors")));
+                PlatformServices.DesktopToastService.ShowToastAsync("配置文件损坏", "ClassBar 部分配置文件已损坏且无法加载，这些配置文件已恢复至默认值。点击此消息以查看详细信息和从过往备份中恢复配置文件。", () => GetService<IUriNavigationService>().NavigateWrapped(new Uri("classisland://app/config-errors")));
             }
             if (Settings.IsSplashEnabled)
             {
@@ -893,8 +893,8 @@ public partial class App : AppBase, IAppHost
     {
         var dialog = new TaskDialog()
         {
-            Title = "ClassIsland 已在运行",
-            Content = "ClassIsland 已经启动，请通过任务栏托盘图标进行设置等操作。" +Environment.NewLine+Environment.NewLine+
+            Title = "ClassBar 已在运行",
+            Content = "ClassBar 已经启动，请通过任务栏托盘图标进行设置等操作。" +Environment.NewLine+Environment.NewLine+
                       "如果您无法看到主界面，可能是因为您在托盘图标菜单中选择了【隐藏主界面】，或者有隐藏主界面的规则或行动正在生效。",
             XamlRoot = GetRootWindow(),
             Buttons =
@@ -908,7 +908,7 @@ public partial class App : AppBase, IAppHost
                     DialogResult = true,
                     ClosesOnInvoked = true,
                     Text = "重启当前实例",
-                    Description = "结束正在运行的 ClassIsland 实例，然后再次启动本实例。",
+                    Description = "结束正在运行的 ClassBar 实例，然后再次启动本实例。",
                     IconSource = new FluentIconSource("\ue0bd"),
                 }
             ]

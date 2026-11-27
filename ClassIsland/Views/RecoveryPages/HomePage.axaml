@@ -22,16 +22,16 @@
             
             <StackPanel Classes="cardContainer">
                 <controls:SettingsExpanderItem IconSource="{ci:FluentIconSource &#xe131;}"
-                                               Content="继续使用 ClassIsland"
+                                               Content="继续使用 ClassBar"
                                                ActionIconSource="{ci:FluentIconSource &#xe44e;}"
                                                Click="ButtonContinue_OnClick"/>
                 <controls:SettingsExpanderItem IconSource="{ci:FluentIconSource &#xe131;}"
-                                               Content="以安全模式继续使用 ClassIsland"
+                                               Content="以安全模式继续使用 ClassBar"
                                                Description="禁用所有插件和自动化功能。"
                                                ActionIconSource="{ci:FluentIconSource &#xe44e;}"
                                                Click="ButtonContinueSafe_OnClick"/>
                 <controls:SettingsExpanderItem IconSource="{ci:FluentIconSource &#xe131;}"
-                                               Content="以诊断模式继续使用 ClassIsland"
+                                               Content="以诊断模式继续使用 ClassBar"
                                                Description="在日志中记录详细的信息，并启用控制台输出。"
                                                ActionIconSource="{ci:FluentIconSource &#xe44e;}"
                                                Click="ButtonContinueDiagnostic_OnClick"/>
@@ -51,7 +51,7 @@
                 <controls:SettingsExpanderItem Name="ButtonRollBack" 
                                                IconSource="{ci:FluentIconSource &#xe135;}"
                                                Content="回滚"
-                                               Description="回滚到之前的 ClassIsland 版本"
+                                               Description="回滚到之前的 ClassBar 版本"
                                                ActionIconSource="{ci:FluentIconSource &#xe44e;}"
 			                                   Click="ButtonRollBack_Onclick"
                                                IsEnabled="False"/>

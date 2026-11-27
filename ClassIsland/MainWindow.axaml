@@ -46,7 +46,7 @@
         <profile:ClassPlan x:Key="FallbackClassPlan"/>
         
         <NativeMenu x:Key="AppMenu">
-            <NativeMenuItem Header="ClassIsland" Click="MenuItemAbout_OnClick">
+            <NativeMenuItem Header="ClassBar" Click="MenuItemAbout_OnClick">
                 <NativeMenuItem.Icon>
                     <OnPlatform Default="Assets/AppLogo.png">
                         <On Content="{x:Null}" Options="macOS"/>
@@ -142,7 +142,7 @@
             <Setter Property="CanResize" Value="False"/>
             <Setter Property="CanMaximize" Value="False"/>
             <Setter Property="CanMinimize" Value="False"/>
-            <Setter Property="Title" Value="ClassIsland"/>
+            <Setter Property="Title" Value="ClassBar"/>
         </Style>
         <Style Selector=":is(Window):windowed">
             <Setter Property="SystemDecorations" Value="Full"/>

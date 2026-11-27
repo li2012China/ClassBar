@@ -19,10 +19,10 @@ public class ClassIsland1ImportProvider : GenericImportProviderBase
     
     public ClassIsland1ImportProvider() : base()
     {
-        ImportFileHeader = "ClassIsland 1.x 课表文件路径";
+        ImportFileHeader = "旧版 1.x 课表文件路径";
         FileTypes =
         [
-            new FilePickerFileType("ClassIsland 1.x 课表文件")
+            new FilePickerFileType("旧版 1.x 课表文件")
             {
                 Patterns = ["*.json"]
             }
@@ -50,8 +50,8 @@ public class ClassIsland1ImportProvider : GenericImportProviderBase
         catch (Exception exception)
         {
             var logger = IAppHost.GetService<ILogger<CsesImportProvider>>();
-            logger.LogError(exception, "导入 ClassIsland 1.x 课表失败");
-            this.ShowErrorToast($"无法导入 ClassIsland 1.x 课表", exception);
+            logger.LogError(exception, "导入旧版 1.x 课表失败");
+            this.ShowErrorToast($"无法导入旧版 1.x 课表", exception);
             return false;
         }
     }

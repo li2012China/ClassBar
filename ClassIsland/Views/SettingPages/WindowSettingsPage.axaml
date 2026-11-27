@@ -120,7 +120,7 @@
                                IsOpen="True"
                                Severity="Warning"
                                IsVisible="{Binding ViewModel.SettingsService.Settings.IsErrorLoadingRawInput}"/>
-            <controls1:InfoBar Message="使用原始输入判断鼠标位置时，如果前台窗口的进程以管理员身份运行，可能会出现无法判定鼠标位置的情况。以管理员身份运行 ClassIsland 可以解决此问题。"
+            <controls1:InfoBar Message="使用原始输入判断鼠标位置时，如果前台窗口的进程以管理员身份运行，可能会出现无法判定鼠标位置的情况。以管理员身份运行 ClassBar 可以解决此问题。"
                                IsClosable="False"
                                IsOpen="True"
                                IsVisible="{Binding ViewModel.SettingsService.Settings.UseRawInput}"/>
@@ -143,7 +143,7 @@
                 </controls1:SettingsExpander.Footer>
                 <controls1:SettingsExpanderItem IconSource="{ci:FluentIconSource &#xE125;}"
                                                 Content="窗口层级设置频率"
-                                                Description="ClassIsland 在什么时候重新设置窗口置顶/置底状态。请注意，较高的设置频率可能会产生较高的性能占用并导致主界面内容闪烁。">
+                                                Description="ClassBar 在什么时候重新设置窗口置顶/置底状态。请注意，较高的设置频率可能会产生较高的性能占用并导致主界面内容闪烁。">
                     <controls1:SettingsExpanderItem.Footer>
                         <ComboBox SelectedIndex="{Binding ViewModel.SettingsService.Settings.WindowTopmostRecheckMode}">
                             <ComboBoxItem>窗口层级变化时（默认）</ComboBoxItem>
@@ -186,7 +186,7 @@
                 <!-- 使用原始输入 -->
                 <controls1:SettingsExpanderItem IconSource="{ci:FluentIconSource &#xEFDB;}"
                                                 Content="使用原始输入"
-                                                Description="启用后，ClassIsland 将使用 RawInput 接收鼠标/触屏事件，而不是轮询获取光标位置。这允许应用辨别鼠标和触摸事件，并分别做出更适宜的响应。如果出现不兼容的问题，请尝试禁用此选项。">
+                                                Description="启用后，ClassBar 将使用 RawInput 接收鼠标/触屏事件，而不是轮询获取光标位置。这允许应用辨别鼠标和触摸事件，并分别做出更适宜的响应。如果出现不兼容的问题，请尝试禁用此选项。">
                     <controls1:SettingsExpanderItem.IsVisible>
                         <OnPlatform Default="False">
                             <On Options="Windows" Content="True"/>
@@ -235,7 +235,7 @@
             <!-- 录制模式 -->
             <controls1:SettingsExpander IconSource="{ci:FluentIconSource &#xF405;}"
                                         Header="录制模式"
-                                        Description="启用后，ClassIsland 将调整窗口属性以便被录屏软件录制。这会导致主界面窗口显示在任务栏中且主界面窗口只会在一个虚拟桌面上显示，如您没有录制 ClassIsland 窗口的需求，请勿开启此选项。">
+                                        Description="启用后，ClassBar 将调整窗口属性以便被录屏软件录制。这会导致主界面窗口显示在任务栏中且主界面窗口只会在一个虚拟桌面上显示，如您没有录制 ClassBar 窗口的需求，请勿开启此选项。">
                 <controls1:SettingsExpander.Footer>
                     <ToggleSwitch IsChecked="{Binding ViewModel.SettingsService.Settings.IsScreenRecordingModeEnabled, Mode=TwoWay}"/>
                 </controls1:SettingsExpander.Footer>
@@ -243,7 +243,7 @@
 
             <controls1:SettingsExpander IconSource="{ci:FluentIconSource &#xF4A4;}"
                                         Header="阻止截图"
-                                        Description="开启后，其他应用无法截取 ClassIsland 主界面窗口内容，录制时也不会录制到主页面。">
+                                        Description="开启后，其他应用无法截取 ClassBar 主界面窗口内容，录制时也不会录制到主页面。">
                 <controls1:SettingsExpander.IsVisible>
                     <OnPlatform Default="False">
                         <On Options="Windows" Content="True"/>

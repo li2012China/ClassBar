@@ -161,7 +161,7 @@ public class DesktopToastService : IDesktopToastService
         }
 
         var id = await _proxy!.NotifyAsync(
-            "ClassIsland",
+            "ClassBar",
             0,
             (await PrepareToastImageResourceAsync(content.LogoImageUri))?.AbsolutePath ?? string.Empty,
             content.Title,

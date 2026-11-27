@@ -16,7 +16,7 @@ public class AboutSettingsViewModel(IManagementService managementService, Settin
     private string _diagnosticInfo = "";
     private bool _isRefreshingContributors;
     private string _license = "";
-    private string _sayings = "点击此处可以查看 ClassIsland 用户群里沙雕群友们的发言";
+    private string _sayings = "点击此处可以查看 ClassBar 用户群里沙雕群友们的发言";
     private ObservableCollection<string> _sayingsCollection = [];
     private ObservableCollection<NuGetLicenseInfo> _thirdPartyLibs = [];
     private bool _isSayingBusy = false;

@@ -232,7 +232,7 @@ public class DiagnosticService(SettingsService settingsService, FileFolderServic
         }
 
         var message = $"""
-                       很抱歉，ClassIsland 遇到了无法解决的问题，即将退出。堆栈跟踪信息已复制到剪贴板。点击【确定】将退出应用，点击【取消】将启动调试器。
+                       很抱歉，ClassBar 遇到了无法解决的问题，即将退出。堆栈跟踪信息已复制到剪贴板。点击【确定】将退出应用，点击【取消】将启动调试器。
 
                        错误信息：{ex?.Message}
 
@@ -240,7 +240,7 @@ public class DiagnosticService(SettingsService settingsService, FileFolderServic
                        """;
 
         // TODO: 实现对话框
-        // var r = MessageBox.Show(message, "ClassIsland", MessageBoxButtons.OKCancel, MessageBoxIcon.Error);
+        // var r = MessageBox.Show(message, "ClassBar", MessageBoxButtons.OKCancel, MessageBoxIcon.Error);
         // if (r == DialogResult.Cancel)
         // {
         //     Debugger.Launch();

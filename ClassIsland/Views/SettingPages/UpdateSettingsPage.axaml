@@ -140,7 +140,7 @@
                               Message="{Binding ViewModel.UpdateService.DeployErrorException.Message, FallbackValue=''}"
                               IsOpen="{Binding ViewModel.UpdateService.DeployErrorException, Converter={x:Static ObjectConverters.IsNotNull}, Mode=OneWay}"
                               CloseButtonClick="InfoBarDeployError_OnCloseButtonClick"/>
-            <controls:InfoBar Severity="Informational" Title="更新将在重启后应用" Message="已成功部署更新，下次启动应用时将启动新版本。您也可以现在重启以立即使用新版本的 ClassIsland。">
+            <controls:InfoBar Severity="Informational" Title="更新将在重启后应用" Message="已成功部署更新，下次启动应用时将启动新版本。您也可以现在重启以立即使用新版本的 ClassBar。">
                 <controls:InfoBar.IsOpen>
                     <Binding Path="ViewModel.SettingsService.Settings.LastUpdateStatus"
                              Converter="{x:Static ObjectConverters.Equal}">

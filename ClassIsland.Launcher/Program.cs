@@ -22,7 +22,7 @@ if (OperatingSystem.IsWindows())
 }
 else
 {
-    ShowError("ClassIsland 正在不支持的平台上运行，无法继续。");
+    ShowError("ClassBar 正在不支持的平台上运行，无法继续。");
     return 1;
 }
 
@@ -58,7 +58,7 @@ var installation = Directory.GetDirectories(root)
 
 if (installation == null)
 {
-    ShowError("找不到有效的 ClassIsland 版本，可能是安装已损坏。请在 https://classisland.tech/download 重新下载并安装 ClassIsland。");
+    ShowError("找不到有效的 ClassBar 版本，可能是安装已损坏。请在 https://github.com/li2012China/ClassBar/releases 重新下载并安装 ClassBar。");
     return 1;
 }
 
@@ -97,7 +97,7 @@ void ShowError(string message)
 {
 #if Platforms_Windows
     PInvoke.MessageBox(HWND.Null, message,
-        "ClassIsland", MESSAGEBOX_STYLE.MB_APPLMODAL | MESSAGEBOX_STYLE.MB_ICONSTOP);
+        "ClassBar", MESSAGEBOX_STYLE.MB_APPLMODAL | MESSAGEBOX_STYLE.MB_ICONSTOP);
 #else
     Console.Error.WriteLine(message);
 #endif

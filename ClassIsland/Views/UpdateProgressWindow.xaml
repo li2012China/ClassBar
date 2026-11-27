@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:ClassIsland.Views"
         xmlns:ci="http://classisland.tech/schemas/xaml/core"
         mc:Ignorable="d"
-        Title="正在更新 ClassIsland…" 
+        Title="正在更新 ClassBar…" 
         TextElement.Foreground="{DynamicResource MaterialDesignBody}"
         Background="{DynamicResource SolidBackgroundFillColorBaseBrush}"
         FontFamily="{StaticResource HarmonyOsSans}"
@@ -28,7 +28,7 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         <TextBlock Grid.Row="0" TextWrapping="Wrap">
-            <Run Text="正在更新 ClassIsland……"/><LineBreak/>
+            <Run Text="正在更新 ClassBar……"/><LineBreak/>
             <Run Text="{Binding ProgressText}"/>
         </TextBlock>
 

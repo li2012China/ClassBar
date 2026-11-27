@@ -13,7 +13,7 @@
             <!-- 定期翻新 -->
             <controls:SettingsExpander IconSource="{ci:FluentIconSource &#xE0B9;}" 
                                         Header="定期翻新"
-                                        Description="当在长时间未启动 ClassIsland 的寒假/暑假等学期结束后的长假后启动 ClassIsland 时，显示桌面通知询问是否重新设置应用的部分设置以适应新学期。">
+                                        Description="当在长时间未启动 ClassBar 的寒假/暑假等学期结束后的长假后启动 ClassBar 时，显示桌面通知询问是否重新设置应用的部分设置以适应新学期。">
                 <controls:SettingsExpander.Styles>
                     <Style Selector="controls|SettingsExpanderItem.new-cfg">
                         <Setter Property="Description" Value="将创建并切换到一个全新的配置文件。"/>
@@ -61,7 +61,7 @@
             <controls:SettingsExpander Header="迎新模式"
                                        IconSource="{ci:FluentIconSource &#xE95D;}"
                                        IsExpanded="{Binding ViewModel.SettingsService.Settings.RefreshingToastIsOnboardingGuide, Mode=OneWay}"
-                                       Description="启用后，在下次显示翻新提示时将其替换为迎新指引，指引不熟悉 ClassIsland 的新同学上手本应用，并对应用进行翻新。此选项在生效一次后将自动关闭。">
+                                       Description="启用后，在下次显示翻新提示时将其替换为迎新指引，指引不熟悉 ClassBar 的新同学上手本应用，并对应用进行翻新。此选项在生效一次后将自动关闭。">
                 <controls:SettingsExpander.Footer>
                     <ToggleSwitch IsChecked="{Binding ViewModel.SettingsService.Settings.RefreshingToastIsOnboardingGuide, Mode=TwoWay}"/>
                 </controls:SettingsExpander.Footer>
@@ -92,7 +92,7 @@
             <controls:SettingsExpander IconSource="{ci:FluentIconSource &#xE3F8;}" 
                                        Header="通知显示间隔"
                                        IsExpanded="True"
-                                       Description="设置在不启动 ClassIsland 多少天后显示翻新或迎新指引。">
+                                       Description="设置在不启动 ClassBar 多少天后显示翻新或迎新指引。">
                 <controls:SettingsExpander.Footer>
                     <ci:Field VerticalAlignment="Center"
                               Suffix="天">

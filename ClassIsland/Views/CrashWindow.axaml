@@ -12,7 +12,7 @@
                    mc:Ignorable="d"
                    WindowStartupLocation="CenterScreen"
                    Icon="/Assets/AppLogo.ico"
-                   Title="ClassIsland 崩溃报告" Height="450" Width="800"
+                   Title="ClassBar 崩溃报告" Height="450" Width="800"
                    EnableMicaWindow="True">
     <Grid Margin="12" RowDefinitions="Auto,Auto,*,Auto,Auto,Auto" ColumnDefinitions="Auto,*">
         <!-- Header -->
@@ -30,10 +30,10 @@
                    Margin="8 0 16 16">
             <TextBlock.Styles>
                 <Style Selector="TextBlock">
-                    <Setter Property="Text" Value="ClassIsland 发生错误 ヽ(*。>Д&lt;)o゜"/>
+                    <Setter Property="Text" Value="ClassBar 发生错误 ヽ(*。>Д&lt;)o゜"/>
                 </Style>  
                 <Style Selector=":no-easter-eggs TextBlock">
-                    <Setter Property="Text" Value="ClassIsland 发生错误"/>
+                    <Setter Property="Text" Value="ClassBar 发生错误"/>
                 </Style>
             </TextBlock.Styles>
         </TextBlock>
@@ -41,7 +41,7 @@
         <!-- Content -->
         <TextBlock Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="1" TextWrapping="Wrap" FontSize="14"
                    Margin="0 0 0 6">
-            <Run Text="ClassIsland 碰到了严重错误而无法正常运行。您可以保存下方的错误信息并向他人寻求帮助。如果您认为这是由软件本身的错误所致，请点击下方“反馈问题”按钮。"/>
+            <Run Text="ClassBar 碰到了严重错误而无法正常运行。您可以保存下方的错误信息并向他人寻求帮助。如果您认为这是由软件本身的错误所致，请点击下方“反馈问题”按钮。"/>
         </TextBlock>
         <TextBox Grid.Column="0" Grid.ColumnSpan="2"
                  x:Name="TextBoxCrashInfo" Grid.Row="2" 

@@ -15,7 +15,7 @@
     <ScrollViewer>
         <StackPanel Classes="settings-container animated-intro">
             <controls:InfoBar Severity="Warning"
-                              Message="ClassIsland 部分配置文件已损坏且无法加载，这些配置文件已恢复至默认值。"
+                              Message="ClassBar 部分配置文件已损坏且无法加载，这些配置文件已恢复至默认值。"
                               IsVisible="{Binding !!Count, Source={x:Static helpers:ConfigureFileHelper.Errors}}">
                 <controls:InfoBar.ActionButton>
                     <Button Theme="{StaticResource TransparentButton}" HorizontalAlignment="Left"
@@ -38,7 +38,7 @@
             <!-- 启用自动备份 -->
             <controls:SettingsExpander IconSource="{ci:FluentIconSource &#xEFFF;}"
                                        Header="启用自动备份"
-                                       Description="启用后，ClassIsland 将每隔一段时间自动备份当前的档案和配置文件。"
+                                       Description="启用后，ClassBar 将每隔一段时间自动备份当前的档案和配置文件。"
                                        IsExpanded="{Binding ViewModel.SettingsService.Settings.IsAutoBackupEnabled, Mode=OneWay}">
                 <controls:SettingsExpander.Footer>
                     <ToggleSwitch IsChecked="{Binding ViewModel.SettingsService.Settings.IsAutoBackupEnabled, Mode=TwoWay}"/>

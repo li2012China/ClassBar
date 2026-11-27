@@ -6,7 +6,7 @@
 
 ## 翻新与迎新
 
-当您在长假长时间没有启动 ClassIsland 后，再次启动 ClassIsland 时应用会询问您是否翻新部分设置以适应新学期。同时您也可以启用迎新模式，迎新模式会在翻新的基础上重置教程状态，以便新同学上手应用。
+当您在长假长时间没有启动 ClassBar 后，再次启动 ClassBar 时应用会询问您是否翻新部分设置以适应新学期。同时您也可以启用迎新模式，迎新模式会在翻新的基础上重置教程状态，以便新同学上手应用。
 
 ![](https://res.classisland.tech/screenshots/changelogs/2.1/6.webp)
 
@@ -14,7 +14,7 @@
 
 ## 教程
 
-ClassIsland 现在引入了教程系统，您可以跟着教程手把手地上手 ClassIsland。
+ClassBar 现在引入了教程系统，您可以跟着教程手把手地上手 ClassBar。
 
 ![](https://res.classisland.tech/screenshots/changelogs/2.1/5.webp)
 
@@ -26,7 +26,7 @@ ClassIsland 现在引入了教程系统，您可以跟着教程手把手地上�
 
 ## 编辑模式
 
-现在 ClassIsland 支持通过编辑模式所见即所得地编辑主界面上的组件，在各个组件行和容器组件间直接拖动组件，并快捷地调整各个设置。
+现在 ClassBar 支持通过编辑模式所见即所得地编辑主界面上的组件，在各个组件行和容器组件间直接拖动组件，并快捷地调整各个设置。
 
 ![](https://res.classisland.tech/screenshots/changelogs/2.1/3.webp)
 
@@ -87,7 +87,7 @@ ClassIsland 现在引入了教程系统，您可以跟着教程手把手地上�
 
 2.1 - LiliyaOlenyeva（莉莉娅·阿琳）
 
-在 2.1 - LiliyaOlenyeva，我们提升了 ClassIsland 的易用性，使其更好用，更易于上手。
+在 2.1 - LiliyaOlenyeva，我们提升了 ClassBar 的易用性，使其更好用，更易于上手。
 
 ## 🚀 新增功能与优化
 
@@ -105,10 +105,10 @@ ClassIsland 现在引入了教程系统，您可以跟着教程手把手地上�
 - 【规则集/天气】固定天气规则集设置下拉框宽度 ([#1849](https://github.com/ClassIsland/ClassIsland/issues/1849)) by @HelloWRC
 - 【恢复】修改了回滚按钮在恢复模式中的启用状态，使其由是否有多个有效的安装决定，同时为回滚按钮添加了OnClick事件 ([#1598](https://github.com/ClassIsland/ClassIsland/issues/1598))
 - 【开发】增强调试体验 (([#1621](https://github.com/ClassIsland/ClassIsland/issues/1621)))
-- 【平台/Windows】在当前前台窗口不是 ClassIsland 时，不移走窗口焦点 by @HelloWRC
+- 【平台/Windows】在当前前台窗口不是 ClassBar 时，不移走窗口焦点 by @HelloWRC
 - 【平台/X11】重新移植兼容缩放模式
 - 【启动屏幕】移植启动加载界面
-- 【示例】移植 ExamplePlugin 到 ClassIsland 2.0
+- 【示例】移植 ExamplePlugin 到 ClassBar 2.0
 - 【数据迁移】打包导入与导出应用数据 ([#1080](https://github.com/ClassIsland/ClassIsland/issues/1080)) by @HelloWRC
 - 【提醒】新版提醒后台工作服务
 - 【天气】允许使用不加密的 HTTP 协议获取天气信息 ([#1569](https://github.com/ClassIsland/ClassIsland/issues/1569)) (([#1570](https://github.com/ClassIsland/ClassIsland/issues/1570)))
