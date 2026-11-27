@@ -446,7 +446,6 @@ public partial class MainWindow : Window, ITopmostEffectPlayer
             ReCheckTopmostState();
             SetBottom();
         }
-        UpdateBreakRotation();
     }
 
     private void LessonsServiceOnPreMainTimerTicked(object? sender, EventArgs e)
@@ -913,39 +912,16 @@ public partial class MainWindow : Window, ITopmostEffectPlayer
     #endregion
 
     #region Input Handling
-    private bool _isPointerOverMainWindow;
-
     private void UpdateMouseStatus()
     {
         try
         {
             var ptr = PlatformServices.WindowPlatformService.GetMousePos();
-            _isPointerOverMainWindow = IsPointerOverWindowRect(ptr);
             MousePosChanged?.Invoke(this, new MousePosChangedEventArgs(ptr));
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "无法更新鼠标状态。");
-        }
-    }
-
-    /// <summary>
-    /// 判断指针是否落在主界面窗口范围内（物理像素坐标）。
-    /// </summary>
-    private bool IsPointerOverWindowRect(Point ptr)
-    {
-        try
-        {
-            GetCurrentDpi(out var dpiX, out var dpiY);
-            var origin = Avalonia.VisualExtensions.PointToScreen(this, new Point(0, 0));
-            return ptr.X >= origin.X && ptr.Y >= origin.Y &&
-                   ptr.X <= origin.X + Bounds.Width * dpiX &&
-                   ptr.Y <= origin.Y + Bounds.Height * dpiY;
-        }
-        catch (Exception ex)
-        {
-            Logger.LogDebug(ex, "无法获取主界面窗口范围");
-            return false;
         }
     }
 
@@ -1726,17 +1702,13 @@ public partial class MainWindow : Window, ITopmostEffectPlayer
 
     #endregion
 
-    #region 快速预览今日时间表与课间内容轮换
+    #region 快速预览今日时间表
 
     /// <summary>预览时每个时间点（上课/课间）播放的时长。</summary>
     private static readonly TimeSpan TodaySchedulePreviewItemDuration = TimeSpan.FromSeconds(10);
 
     private bool _isTodaySchedulePreviewing;
     private CancellationTokenSource? _todaySchedulePreviewCts;
-
-    /// <summary>预览期间的课间轮换参数：轮换周期与「临近上课恢复原显示」阈值按课间真实时长等比缩小。</summary>
-    private TimeSpan? _previewRotationPeriod;
-    private TimeSpan? _previewNearThreshold;
 
     /// <summary>预览分段：模拟时间从 Start 匀速推进到 End，耗时 DurationMs；Item 为对应时间点（余量/空档段为 null）。</summary>
     private sealed class TodaySchedulePreviewSegment
@@ -1886,19 +1858,6 @@ public partial class MainWindow : Window, ITopmostEffectPlayer
                 // 减去已流逝的真实时间，抵消 GetCurrentLocalDateTime() 中系统时间的自然增长。
                 settings.DebugTimeOffsetSeconds = (target - realBase).TotalSeconds - elapsedMs / 1000.0;
 
-                // 预览中的课间轮换参数：轮换周期取课间预览时长的 1/3（三个视图各显示一次），
-                // 最后 1/6 恢复原显示（对应真实使用中临近上课最后几十秒）。
-                if (segment.Item is { TimeType: 1 } && segment.End > segment.Start)
-                {
-                    _previewRotationPeriod = TimeSpan.FromTicks((segment.End - segment.Start).Ticks / 3);
-                    _previewNearThreshold = TimeSpan.FromTicks((segment.End - segment.Start).Ticks / 6);
-                }
-                else
-                {
-                    _previewRotationPeriod = null;
-                    _previewNearThreshold = null;
-                }
-
                 var p = Math.Min(elapsedMs / totalMs, 1.0);
                 progress?.Report(new TodaySchedulePreviewProgress(p,
                     BuildTodaySchedulePreviewText(p, simulated, items, segment.Item)));
@@ -1925,8 +1884,6 @@ public partial class MainWindow : Window, ITopmostEffectPlayer
             settings.DebugTimeSpeed = originalSpeed;
             settings.IsNotificationEnabled = originalNotificationEnabled;
             _isTodaySchedulePreviewing = false;
-            _previewRotationPeriod = null;
-            _previewNearThreshold = null;
             _todaySchedulePreviewCts?.Dispose();
             _todaySchedulePreviewCts = null;
             // 等课程服务按恢复后的真实时间重算状态，再决定是否收起主界面。
@@ -1985,130 +1942,4 @@ public partial class MainWindow : Window, ITopmostEffectPlayer
 
     #endregion
 
-    #region 课间内容轮换（课表 → 距离上课时间 → 当前时间，临近上课恢复原显示）
-
-    private string? _lastBreakRotationCountdownText;
-    private string? _lastBreakRotationClockText;
-    private string? _lastBreakRotationDateText;
-
-    /// <summary>
-    /// 课间轮换覆盖层当前是否正在显示（供行控件的鼠标悬停虚化判定使用）。
-    /// 覆盖层显示时整块主界面都被它盖住，因此鼠标在窗口任意位置都应算作「在主界面上」。
-    /// </summary>
-    internal bool IsBreakRotationOverlayVisible =>
-        BreakRotationOverlay is { IsVisible: true } && BreakRotationOverlay.Opacity > 0.01;
-
-    /// <summary>
-    /// 课间内容轮换：课间时主界面内容每 20 秒在 课表（原显示）→ 距离上课时间 → 当前时间 之间轮换；
-    /// 距离上课只剩最后几十秒（CountdownSeconds 设置，默认 60 秒）时恢复原显示（课表）。
-    /// 快进预览期间轮换周期与阈值按课间预览时长等比缩小，便于在预览中看到完整轮换。
-    /// </summary>
-    private void UpdateBreakRotation()
-    {
-        var showOverlay = false;
-        string? countdownText = null;
-        string? clockText = null;
-        string? dateText = null;
-        try
-        {
-            if (_entranceAnimationPlayed &&
-                _isInterfacePresent &&
-                !ViewModel.IsMainWindowCollapsed &&
-                !_presenceBusy &&
-                LessonsService.CurrentState == TimeState.Breaking &&
-                LessonsService.CurrentTimeLayoutItem is { TimeType: 1 } breakItem)
-            {
-                var now = ExactTimeService.GetCurrentLocalDateTime();
-                var elapsed = now.TimeOfDay - breakItem.StartTime;
-                var remaining = LessonsService.OnClassLeftTime;
-                var threshold = _isTodaySchedulePreviewing && _previewNearThreshold.HasValue
-                    ? _previewNearThreshold.Value
-                    : TimeSpan.FromSeconds(Math.Max(SettingsService.Settings.CountdownSeconds, 1));
-                var period = _isTodaySchedulePreviewing && _previewRotationPeriod.HasValue
-                    ? _previewRotationPeriod.Value
-                    : TimeSpan.FromSeconds(20);
-                if (period > TimeSpan.Zero && elapsed >= TimeSpan.Zero && remaining > threshold)
-                {
-                    // 相位：0=课表（原显示，隐藏覆盖层）1=距离上课时间 2=当前时间。
-                    var phase = (int)(elapsed.Ticks / period.Ticks) % 3;
-                    if (phase == 1)
-                    {
-                        showOverlay = true;
-                        countdownText = $"距上课 {remaining:hh\\:mm\\:ss}";
-                        var nextSubject = LessonsService.NextClassSubject?.Name;
-                        if (!string.IsNullOrWhiteSpace(nextSubject))
-                        {
-                            countdownText += $" · 下节 {nextSubject}";
-                        }
-                    }
-                    else if (phase == 2)
-                    {
-                        showOverlay = true;
-                        clockText = now.ToString("HH:mm:ss");
-                        var week = now.DayOfWeek switch
-                        {
-                            DayOfWeek.Monday => "星期一",
-                            DayOfWeek.Tuesday => "星期二",
-                            DayOfWeek.Wednesday => "星期三",
-                            DayOfWeek.Thursday => "星期四",
-                            DayOfWeek.Friday => "星期五",
-                            DayOfWeek.Saturday => "星期六",
-                            _ => "星期日"
-                        };
-                        dateText = $"{now:yyyy年M月d日} {week}";
-                    }
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "更新课间内容轮换失败");
-        }
-
-        var targetOpacity = showOverlay ? (IsMainWindowMouseInFaded() ? 0.05 : 1d) : 0d;
-        if (Math.Abs(BreakRotationOverlay.Opacity - targetOpacity) > 0.001)
-        {
-            BreakRotationOverlay.Opacity = targetOpacity;
-        }
-        SetBreakRotationViewActive(BreakRotationCountdownView, countdownText != null);
-        SetBreakRotationViewActive(BreakRotationClockView, clockText != null);
-        if (countdownText != null && countdownText != _lastBreakRotationCountdownText)
-        {
-            BreakRotationCountdownText.Text = countdownText;
-            _lastBreakRotationCountdownText = countdownText;
-        }
-        if (clockText != null && (clockText != _lastBreakRotationClockText || dateText != _lastBreakRotationDateText))
-        {
-            BreakRotationClockText.Text = clockText;
-            BreakRotationDateText.Text = dateText;
-            _lastBreakRotationClockText = clockText;
-            _lastBreakRotationDateText = dateText;
-        }
-    }
-
-    /// <summary>
-    /// 切换课间轮换视图：加 active 类触发淡入 + 上浮动画，去掉则淡出 + 下沉。
-    /// </summary>
-    private static void SetBreakRotationViewActive(Control view, bool active)
-    {
-        if (view.Classes.Contains("active") == active)
-        {
-            return;
-        }
-        view.Classes.Set("active", active);
-    }
-
-    /// <summary>
-    /// 主界面当前是否处于「鼠标悬停虚化」状态（与主界面行的判定规则一致）。
-    /// 轮换覆盖层不属于任何主界面行，需要单独跟随虚化，
-    /// 否则鼠标移到轮换出来的内容上时主界面不会变淡。
-    /// </summary>
-    private bool IsMainWindowMouseInFaded()
-    {
-        var settings = SettingsService.Settings;
-        return settings.IsMouseInFadingEnabled &&
-               (_isPointerOverMainWindow ^ settings.IsMouseInFadingReversed);
-    }
-
-    #endregion
 }

@@ -151,15 +151,6 @@
             <Setter Property="CanMinimize" Value="True"/>
         </Style>
 
-        <!-- 课间轮换内容的切换动画：切换到某个视图时淡入并从下方轻微上移，切走时淡出并下沉 -->
-        <Style Selector="StackPanel.break-rotation-view">
-            <Setter Property="Opacity" Value="0"/>
-            <Setter Property="RenderTransform" Value="translateY(7px)"/>
-        </Style>
-        <Style Selector="StackPanel.break-rotation-view.active">
-            <Setter Property="Opacity" Value="1"/>
-            <Setter Property="RenderTransform" Value="translateY(0px)"/>
-        </Style>
     </Window.Styles>
     <Grid x:Name="WindowRoot"
           HorizontalAlignment="Stretch"
@@ -345,72 +336,6 @@
                                                 </ItemsControl>
                                             </StackPanel>
 
-                                            <!-- 课间内容轮换覆盖层：课间时主界面内容在 课表（原显示）/ 距离上课时间 / 当前时间 之间轮换；
-                                                 显示「课表」时淡出本层露出原内容，临近上课最后几十秒保持原显示。
-                                                 高度显式绑定行区域高度，避免大字号内容把窗口（SizeToContent=Height）撑高，
-                                                 否则鼠标移到溢出区域时不会触发主界面虚化。
-                                                 字号与主界面「倒计时」组件一致（MainWindowBodyFontSize）。 -->
-                                            <Border x:Name="BreakRotationOverlay"
-                                                    IsHitTestVisible="False"
-                                                    ClipToBounds="False"
-                                                    VerticalAlignment="Top"
-                                                    Height="{Binding #RootMainWindowLinesItemsControl.Bounds.Height}"
-                                                    Opacity="0"
-                                                    Background="{Binding ViewModel.Settings.MainWindowCurtainColor, Converter={StaticResource ColorToColorPickerBrushConverter}}">
-                                                <Border.Transitions>
-                                                    <Transitions>
-                                                        <DoubleTransition Property="Opacity"
-                                                                          Duration="0:0:0.18"
-                                                                          Easing="0.25, 0.1, 0.25, 1"/>
-                                                    </Transitions>
-                                                </Border.Transitions>
-                                                <Panel>
-                                                    <StackPanel x:Name="BreakRotationCountdownView"
-                                                                Classes="break-rotation-view"
-                                                                Orientation="Horizontal"
-                                                                HorizontalAlignment="Center"
-                                                                VerticalAlignment="Center"
-                                                                Spacing="8">
-                                                        <StackPanel.Transitions>
-                                                            <Transitions>
-                                                                <DoubleTransition Property="Opacity"
-                                                                                  Duration="0:0:0.26"
-                                                                                  Easing="0.25, 0.1, 0.25, 1"/>
-                                                                <TransformOperationsTransition Property="RenderTransform"
-                                                                                              Duration="0:0:0.32"
-                                                                                              Easing="0.25, 0.1, 0.25, 1"/>
-                                                            </Transitions>
-                                                        </StackPanel.Transitions>
-                                                        <TextBlock x:Name="BreakRotationCountdownText"
-                                                                   FontSize="{DynamicResource MainWindowBodyFontSize}"
-                                                                   VerticalAlignment="Center"/>
-                                                    </StackPanel>
-                                                    <StackPanel x:Name="BreakRotationClockView"
-                                                                Classes="break-rotation-view"
-                                                                Orientation="Horizontal"
-                                                                HorizontalAlignment="Center"
-                                                                VerticalAlignment="Center"
-                                                                Spacing="8">
-                                                        <StackPanel.Transitions>
-                                                            <Transitions>
-                                                                <DoubleTransition Property="Opacity"
-                                                                                  Duration="0:0:0.26"
-                                                                                  Easing="0.25, 0.1, 0.25, 1"/>
-                                                                <TransformOperationsTransition Property="RenderTransform"
-                                                                                              Duration="0:0:0.32"
-                                                                                              Easing="0.25, 0.1, 0.25, 1"/>
-                                                            </Transitions>
-                                                        </StackPanel.Transitions>
-                                                        <TextBlock x:Name="BreakRotationClockText"
-                                                                   FontSize="{DynamicResource MainWindowBodyFontSize}"
-                                                                   VerticalAlignment="Center"/>
-                                                        <TextBlock x:Name="BreakRotationDateText"
-                                                                   FontSize="{DynamicResource MainWindowBodyFontSize}"
-                                                                   Opacity="0.72"
-                                                                   VerticalAlignment="Center"/>
-                                                    </StackPanel>
-                                                </Panel>
-                                            </Border>
                                         </Grid>
 
                                     </Border>
